@@ -34,6 +34,10 @@ Now you can start the [OAuth2](http://oauth.net/2) authentication dance with `M-
 
 When the authentication with *SoundCloud* was successful you can search songs with `M-x soundklaus-tracks` and playlists with `M-x soundklaus-playlists`. In the `*soundklaus*` buffer you can move to the next song with `C-n` or `n`, and to the previous one with `C-p` or `p`. Pressing `RET` plays the current song, and `a` adds the current song at point to the *EMMS* playlist.
 
+## Screenshot
+
+![](https://raw.githubusercontent.com/r0man/soundklaus.el/master/screenshot.jpg)
+
 ## License
 
 Copyright © 2014 r0man
