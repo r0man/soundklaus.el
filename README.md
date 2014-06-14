@@ -1,4 +1,4 @@
-# soundklaus.el
+# soundklaus.el [![Build Status](https://travis-ci.org/r0man/soundklaus.el.png)](https://travis-ci.org/r0man/soundklaus.el)
 
 Play [SoundCloud](https://soundcloud.com) music in [Emacs](http://www.gnu.org/software/emacs/) via [EMMS](http://www.gnu.org/software/emms).
 
