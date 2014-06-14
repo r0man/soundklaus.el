@@ -108,7 +108,7 @@
   (- (/ (frame-width) 2) (* soundklaus-padding 2)))
 
 (defun soundklaus-horizontal-rule ()
-  "Insert a horizonal rule into the buffer."
+  "Insert a horizontal rule into the buffer."
   (widget-insert (concat (make-string soundklaus-padding ?\s)
 			 (make-string (- (soundklaus-width) soundklaus-padding) ?-)
 			 "\n")))
@@ -133,12 +133,14 @@
   (concat soundklaus-api-root (soundklaus-path resource)))
 
 (defun soundklaus-define-slot (name attribute)
+  "Returns the s-expression to define a resource slot."
   `(,(car attribute)
     :initarg ,(intern (format ":%s" (car attribute)))
     :accessor ,(intern (format "soundklaus-%s-%s" name (car attribute)))
     :documentation ,(cadr attribute)))
 
 (defun soundklaus-define-class (name slots)
+  "Returns the s-expression to define a resource class."
   (let* ((class (intern (format "soundklaus-%s" name))))
     `(defclass ,class ()
        ,(mapcar (lambda (slot)
@@ -181,12 +183,14 @@
     (intern (apply 'format (format "soundklaus-%s" name) args))))
 
 (defun soundklaus-define-path (name pattern)
+  "Returns the s-expression to define a resource path method."
   (let* ((slots (soundklaus-path-symbols pattern))
 	 (resource (gensym "resource-")))
     `(defmethod ,(soundklaus-intern "path") ((,resource ,(soundklaus-intern name)))
        (soundklaus-replace-slots ,pattern ',slots ,resource))))
 
 (defmacro define-soundklaus-resource (name pattern doc attributes)
+  "Define a SoundCloud resource."
   `(progn
      ,(soundklaus-define-class name attributes)
      ,(soundklaus-define-path name pattern)))
@@ -345,14 +349,11 @@ parameters."
   "Returns the `playlist` duration formatted as HH:MM:SS."
   (soundklaus-format-duration (soundklaus-playlist-duration playlist)))
 
-;; TODO: Handle arrays
 (defun soundklaus-transform (arg transform-fn)
   "Transform ARG with TRANSFORM-FN. ARG can be an assoc list,
 hash table, string or a symbol. If ARG is an assoc list or hash
 table only the keys will be transformed."
   (cond
-   ;; ((and (consp arg))
-   ;;  (mapcar (lambda (c) (cons (soundklaus-transform (car c) transform-fn) (cdr c))) arg))
    ((and (listp arg) (listp (car arg)))
     (mapcar (lambda (c) (cons (soundklaus-transform (car c) transform-fn) (cdr c))) arg))
    ((and (listp arg) (atom (car arg)))
@@ -386,10 +387,10 @@ association list or hash table only the keys will be underscored."
 (defun soundklaus-tag-track (track)
   "Tag the SoundCloud track."
   (let* ((filename (soundklaus-track-download-filename track)))
-    (shell-command (format "mp3info -d %s" filename))
-    (shell-command (format "mp3info -t '%s' %s"
-			   (soundklaus-track-title track)
-			   filename))))
+    (shell-command (format "mp3info -d %s" (shell-quote-argument filename)))
+    (shell-command (format "mp3info -t %s %s"
+			   (shell-quote-argument (soundklaus-track-title track))
+			   (shell-quote-argument filename)))))
 
 (defmethod soundklaus-download ((media soundklaus-track))
   (let* ((url (soundklaus-track-stream-url media))
@@ -414,21 +415,33 @@ association list or hash table only the keys will be underscored."
       (erase-buffer)
       (insert "#!/usr/bin/env bash")
       (newline)
-      (insert (format "mkdir -p %s" directory))
+      (insert "set -e")
+      (newline)
+      (insert (format "mkdir -p %s" (shell-quote-argument directory)))
       (newline)
       (loop for n from 1 to (length (soundklaus-playlist-tracks playlist)) do
 	    (let* ((track (elt (soundklaus-playlist-tracks playlist) (- n 1)))
 		   (url (soundklaus-track-stream-url track))
 		   (filename (soundklaus-playlist-track-download-filename playlist track n)))
-	      (insert (format "curl -L '%s' -o '%s'" url filename))
+	      (insert (format "curl -L %s -o %s"
+			      (shell-quote-argument url)
+			      (shell-quote-argument filename)))
+	      (newline)
+	      (insert (format "mp3info -d %s" (shell-quote-argument filename)))
+	      (newline)
+	      (insert (format "mp3info -n %s -t %s %s"
+			      n (shell-quote-argument (soundklaus-track-title track))
+			      (shell-quote-argument filename)))
 	      (newline)))
       (buffer-string))))
 
-(defmethod soundklaus-download ((media soundklaus-playlist))
-  (let* ((buffer (format "*soundklaus-download-%s*" (soundklaus-playlist-id media)))
-	 (filename (make-temp-file "download-playlist")))
+(defmethod soundklaus-download ((playlist soundklaus-playlist))
+  (let* ((id (soundklaus-playlist-id playlist))
+	 (buffer (format "*soundklaus-download-%s*" id))
+	 (filename (make-temp-file (format "soundklaus-download-playlist-%s" id))))
+    (message "%s" filename)
     (with-temp-buffer
-      (insert (soundklaus-download-playlist-script media))
+      (insert (soundklaus-download-playlist-script playlist))
       (write-region (point-min) (point-max) filename))
     (set-process-sentinel
      (start-process "SoundCloud Download" buffer "bash" filename)
@@ -437,20 +450,21 @@ association list or hash table only the keys will be underscored."
 	((string= "exit" (process-status process))
 	 (let ((buffer (get-buffer buffer)))
 	   (if buffer (kill-buffer buffer)))
-	 (message "Download of %s complete." (soundklaus-playlist-title media))))))
-    (message "Downloading %s ..." (soundklaus-playlist-title media))))
+	 ;; (delete-file filename)
+	 (message "Download of %s complete." (soundklaus-playlist-title playlist))))))
+    (message "Downloading %s ..." (soundklaus-playlist-title playlist))))
 
-(defmethod soundklaus-play ((media soundklaus-track))
-  (emms-play-soundklaus-track media))
+(defmethod soundklaus-play ((track soundklaus-track))
+  (emms-play-soundklaus-track track))
 
-(defmethod soundklaus-play ((media soundklaus-playlist))
-  (emms-play-soundklaus-playlist media))
+(defmethod soundklaus-play ((playlist soundklaus-playlist))
+  (emms-play-soundklaus-playlist playlist))
 
-(defmethod soundklaus-playlist-add ((media soundklaus-track))
-  (emms-add-soundklaus-track media))
+(defmethod soundklaus-playlist-add ((track soundklaus-track))
+  (emms-add-soundklaus-track track))
 
-(defmethod soundklaus-playlist-add ((media soundklaus-playlist))
-  (emms-add-soundklaus-playlist media))
+(defmethod soundklaus-playlist-add ((playlist soundklaus-playlist))
+  (emms-add-soundklaus-playlist playlist))
 
 (defun soundklaus-append-current ()
   "Append the current SoundCloud media at point to the EMMS playlist."
