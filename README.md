@@ -6,7 +6,7 @@ Play [SoundCloud](https://soundcloud.com) music in [Emacs](http://www.gnu.org/so
 
 ## Configuration
 
-This mode requires a working [EMMS](http://www.gnu.org/software/emms) setup for Emacs. Follow the EMMS [Quick-Start Guide](http://www.gnu.org/software/emms/quickstart.html) to configure EMMS.
+This mode requires a working [EMMS](http://www.gnu.org/software/emms) setup for Emacs. Follow the *EMMS* [Quick-Start Guide](http://www.gnu.org/software/emms/quickstart.html) to configure *EMMS*.
 
 ## Authentication
 
@@ -24,7 +24,7 @@ Now you can start the [OAuth2](http://oauth.net/2) authentication dance with `M-
 
 ## Usage
 
-When the authentication with *SoundCloud* was successful you can search songs with `M-x soundklaus-tracks` and playlists with `M-x soundklaus-playlists`.
+When the authentication with *SoundCloud* was successful you can search songs with `M-x soundklaus-tracks` and playlists with `M-x soundklaus-playlists`. In the `*soundklaus*` buffer you can move to the next song with `C-n` or `n`, and to the previous one with `C-p` or `p`. Pressing `RET` plays the current song, and `a` adds the current song at point to the *EMMS* playlist.
 
 ## License
 
