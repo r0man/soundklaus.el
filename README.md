@@ -22,6 +22,10 @@ You need to authorize *soundklaus.el* to access your SoundCloud account. Your we
 
 Now you can start the [OAuth2](http://oauth.net/2) authentication dance with `M-x soundklaus-connect`.
 
+## Usage
+
+When the authentication with *SoundCloud* was successful you can search songs with `M-x soundklaus-tracks` and playlists with `M-x soundklaus-playlists`.
+
 ## License
 
 Copyright © 2014 r0man
