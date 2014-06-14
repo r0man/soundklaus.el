@@ -1,0 +1,5 @@
+/.cask/
+/soundcloud-resources.elc
+/inflect.elc
+/dist/
+/soundcloud-pkg.el
