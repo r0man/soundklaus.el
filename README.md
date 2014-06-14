@@ -6,7 +6,7 @@ Play [SoundCloud](https://soundcloud.com) music in [Emacs](http://www.gnu.org/so
 
 ## Configuration
 
-This mode requires a working [EMMS](http://www.gnu.org/software/emms) setup for Emacs. The EMMS [Quick-Start Guide](http://www.gnu.org/software/emms/quickstart.html) should help you to configure EMMS.
+This mode requires a working [EMMS](http://www.gnu.org/software/emms) setup for Emacs. Follow the EMMS [Quick-Start Guide](http://www.gnu.org/software/emms/quickstart.html) to configure EMMS.
 
 ## License
 
