@@ -10,7 +10,7 @@ Play [SoundCloud](https://soundcloud.com) music in [Emacs](http://www.gnu.org/so
 
 You can install `soundklaus.el` with the following command:
 
-<kbd>M-x package-install [RET] soundklaus [RET]</kbd>
+`M-x package-install [RET] soundklaus [RET]`
 
 ## Configuration
 
