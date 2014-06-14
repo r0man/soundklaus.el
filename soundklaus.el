@@ -1,4 +1,4 @@
-;;; soundklaus.el --- Play SoundCloud music in Emacs via EMMS
+;;; soundklaus.el --- Play SoundCloud music in Emacs via EMMS -*- lexical-binding: t -*-
 
 ;; Copyright © 2014 r0man <roman@burningswell.com>
 
@@ -6,7 +6,7 @@
 ;; URL: https://github.com/r0man/soundklaus.el
 ;; Keywords: soundcloud, music, emms
 ;; Version: 0.1.0
-;; Package-Requires: ((dash "1.5.0") (emms "3.0") (request "0.1.0") (s "1.6.0") (pkg-info "0.4"))
+;; Package-Requires: ((s "1.6.0") (dash "1.5.0") (pkg-info "0.4"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -305,6 +305,21 @@ number, string, symbol or an association list."
 		   (soundklaus-safe-path (soundklaus-track-username track))
 		   (soundklaus-safe-path (soundklaus-track-title track))))))
 
+(defun soundklaus-playlist-download-directory (playlist)
+  "Returns the download directory for `playlist`."
+  (expand-file-name
+   (format "%s/%s/%s"
+  	   soundklaus-download-dir
+  	   (soundklaus-safe-path (soundklaus-playlist-username playlist))
+  	   (soundklaus-safe-path (soundklaus-playlist-title playlist)))))
+
+(defun soundklaus-playlist-track-download-filename (playlist track n)
+  "Returns the download filename of the `track` number `n` in `playlist`."
+  (expand-file-name
+   (format "%s/%02d-%s.mp3"
+	   (soundklaus-playlist-download-directory playlist)
+	   n (soundklaus-safe-path (soundklaus-track-title track)))))
+
 (defun soundklaus-track-header (track)
   "Returns the `track` header as a string."
   (concat (soundklaus-track-title track) " - "
@@ -392,6 +407,41 @@ association list or hash table only the keys will be underscored."
 	 (message "Download of %s complete." (soundklaus-track-title media))))))
     (message "Downloading %s ..." (soundklaus-track-title media))))
 
+(defun soundklaus-download-playlist-script (playlist)
+  "Returns the content of a shell script to download `playlist`."
+  (let ((directory (soundklaus-playlist-download-directory playlist)))
+    (with-temp-buffer
+      (erase-buffer)
+      (insert "#!/usr/bin/env bash")
+      (newline)
+      (insert (format "mkdir -p %s" directory))
+      (newline)
+      (loop for n from 1 to (length (soundklaus-playlist-tracks playlist)) do
+	    (let* ((track (elt (soundklaus-playlist-tracks playlist) (- n 1)))
+		   (url (soundklaus-track-stream-url track))
+		   (filename (soundklaus-playlist-track-download-filename playlist track n)))
+	      (insert (format "curl -L '%s' -o '%s'" url filename))
+	      (newline)))
+      (buffer-string))))
+
+(make-temp-file "foo")
+
+(defmethod soundklaus-download ((media soundklaus-playlist))
+  (let* ((buffer (format "*soundklaus-download-%s*" (soundklaus-playlist-id media)))
+	 (filename (make-temp-file "download-playlist")))
+    (with-temp-buffer
+      (insert (soundklaus-download-playlist-script media))
+      (write-region (point-min) (point-max) filename))
+    (set-process-sentinel
+     (start-process "SoundCloud Download" buffer "bash" filename)
+     (lambda (process event)
+       (cond
+	((string= "exit" (process-status process))
+	 (let ((buffer (get-buffer buffer)))
+	   (if buffer (kill-buffer buffer)))
+	 (message "Download of %s complete." (soundklaus-playlist-title media))))))
+    (message "Downloading %s ..." (soundklaus-playlist-title media))))
+
 (defmethod soundklaus-play ((media soundklaus-track))
   (emms-play-soundklaus-track media))
 
@@ -455,7 +505,6 @@ association list or hash table only the keys will be underscored."
              ("response_type" . "code_and_token")
              ("scope" . "non-expiring")))))
 
-;;;###autoload
 (defun soundklaus-connect ()
   "Connect with SoundCloud."
   (interactive)
