@@ -25,3 +25,10 @@ Now you can start the authentication with `M-x soundklaus-connect`.
 ## License
 
 Copyright © 2014 r0man
+
+This file is NOT part of GNU Emacs.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3, or (at your option)
+any later version.
