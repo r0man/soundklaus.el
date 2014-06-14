@@ -1,0 +1,5 @@
+language: emacs-lisp
+before_script:
+  - sudo apt-get install emacs
+script:
+  - make
