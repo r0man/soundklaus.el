@@ -10,7 +10,7 @@ This mode requires a working [EMMS](http://www.gnu.org/software/emms) setup for 
 
 ## Authentication
 
-You need to authorize *soundklaus.el* to access your SoundCloud account. Your web browser should open Emacs via `emacsclient` for the OAuth2 callback URL  `soundklaus://oauth/callback`. On a Linux system you can configure this by adding the following content to the  `~/.local/share/applications/soundklaus.desktop` file in your home directory.
+You need to authorize *soundklaus.el* to access your SoundCloud account. Your web browser should open Emacs via `emacsclient` for the [OAuth2](http://oauth.net/2) callback URL  `soundklaus://oauth/callback`. On a Linux system you can configure this by adding the following content to the  `~/.local/share/applications/soundklaus.desktop` file in your home directory.
 
 	[Desktop Entry]
 	Name=SoundKlaus
@@ -20,7 +20,7 @@ You need to authorize *soundklaus.el* to access your SoundCloud account. Your we
 	Terminal=false
 	MimeType=x-scheme-handler/soundklaus;
 
-Now you can start the authentication with `M-x soundklaus-connect`.
+Now you can start the [OAuth2](http://oauth.net/2) authentication dance with `M-x soundklaus-connect`.
 
 ## License
 
