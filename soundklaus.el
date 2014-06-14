@@ -304,25 +304,22 @@ number, string, symbol or an association list."
 (defun soundklaus-track-download-filename (track)
   "Returns the download filename for `track`."
   (expand-file-name
-   (concat soundklaus-download-dir "/"
-	   (format "%s/%s.mp3"
-		   (soundklaus-safe-path (soundklaus-track-username track))
-		   (soundklaus-safe-path (soundklaus-track-title track))))))
+   (concat (file-name-as-directory soundklaus-download-dir)
+	   (file-name-as-directory (soundklaus-safe-path (soundklaus-track-username track)))
+	   (concat (soundklaus-safe-path (soundklaus-track-title track)) ".mp3"))))
 
 (defun soundklaus-playlist-download-directory (playlist)
   "Returns the download directory for `playlist`."
   (expand-file-name
-   (format "%s/%s/%s"
-  	   soundklaus-download-dir
-  	   (soundklaus-safe-path (soundklaus-playlist-username playlist))
+   (concat (file-name-as-directory soundklaus-download-dir)
+  	   (file-name-as-directory (soundklaus-safe-path (soundklaus-playlist-username playlist)))
   	   (soundklaus-safe-path (soundklaus-playlist-title playlist)))))
 
 (defun soundklaus-playlist-track-download-filename (playlist track n)
   "Returns the download filename of the `track` number `n` in `playlist`."
   (expand-file-name
-   (format "%s/%02d-%s.mp3"
-	   (soundklaus-playlist-download-directory playlist)
-	   n (soundklaus-safe-path (soundklaus-track-title track)))))
+   (concat (file-name-as-directory (soundklaus-playlist-download-directory playlist))
+	   (format "%02d-%s.mp3" n (soundklaus-safe-path (soundklaus-track-title track))))))
 
 (defun soundklaus-track-header (track)
   "Returns the `track` header as a string."
@@ -415,7 +412,7 @@ association list or hash table only the keys will be underscored."
       (erase-buffer)
       (insert "#!/usr/bin/env bash")
       (newline)
-      (insert "set -e")
+      (insert "set -x")
       (newline)
       (insert (format "mkdir -p %s" (shell-quote-argument directory)))
       (newline)
@@ -423,9 +420,8 @@ association list or hash table only the keys will be underscored."
 	    (let* ((track (elt (soundklaus-playlist-tracks playlist) (- n 1)))
 		   (url (soundklaus-track-stream-url track))
 		   (filename (soundklaus-playlist-track-download-filename playlist track n)))
-	      (insert (format "curl -L %s -o %s"
-			      (shell-quote-argument url)
-			      (shell-quote-argument filename)))
+	      (insert (format "curl -L '%s' -o %s"
+			      url (shell-quote-argument filename)))
 	      (newline)
 	      (insert (format "mp3info -d %s" (shell-quote-argument filename)))
 	      (newline)
