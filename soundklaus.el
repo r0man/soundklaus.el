@@ -424,8 +424,6 @@ association list or hash table only the keys will be underscored."
 	      (newline)))
       (buffer-string))))
 
-(make-temp-file "foo")
-
 (defmethod soundklaus-download ((media soundklaus-playlist))
   (let* ((buffer (format "*soundklaus-download-%s*" (soundklaus-playlist-id media)))
 	 (filename (make-temp-file "download-playlist")))
