@@ -455,6 +455,7 @@ association list or hash table only the keys will be underscored."
              ("response_type" . "code_and_token")
              ("scope" . "non-expiring")))))
 
+;;;###autoload
 (defun soundklaus-connect ()
   "Connect with SoundCloud."
   (interactive)
