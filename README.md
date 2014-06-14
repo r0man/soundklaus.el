@@ -4,6 +4,14 @@ Play [SoundCloud](https://soundcloud.com) music in [Emacs](http://www.gnu.org/so
 
 ![](http://imgs.xkcd.com/comics/techno.png)
 
+## Installation
+
+*soundklaus.el* is available on [MELPA](http://melpa.milkbox.net).
+
+You can install `soundklaus.el` with the following command:
+
+<kbd>M-x package-install [RET] soundklaus [RET]</kbd>
+
 ## Configuration
 
 This mode requires a working [EMMS](http://www.gnu.org/software/emms) setup for Emacs. Follow the *EMMS* [Quick-Start Guide](http://www.gnu.org/software/emms/quickstart.html) to configure *EMMS*.
