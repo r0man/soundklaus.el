@@ -4,6 +4,10 @@ Play [SoundCloud](https://soundcloud.com) music in [Emacs](http://www.gnu.org/so
 
 ![](http://imgs.xkcd.com/comics/techno.png)
 
+## Prerequisites
+
+This mode requires [Emacs](http://www.gnu.org/software/emacs/) 24. Optional dependencies are [curl](http://curl.haxx.se) and [mp3info](http://ibiblio.org/mp3info).
+
 ## Installation
 
 *soundklaus.el* is available on [MELPA](http://melpa.milkbox.net).
