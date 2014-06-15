@@ -26,9 +26,29 @@
 ;; Boston, MA 02110-1301, USA.
 
 ;;; Commentary:
+
+;; Search and play tracks and playlists from SoundCloud in Emacs via EMMS.
+
+;;; Installation:
+
+;; Available as a package on MELPA.
+
+;; (add-to-list 'package-archives
+;;              '("melpa" . "http://melpa.milkbox.net/packages/") t)
 ;;
-;; Todo ...
-;;
+;; M-x package-install soundklaus
+
+;;; Usage:
+
+;; M-x soundklaus-connect - Authenticate with SoundCloud
+;; M-x soundklaus-playlists - Find playlists on SoundCloud
+;; M-x soundklaus-tracks - Find tracks on SoundCloud
+
+;; Todo:
+
+;; - activities
+;; - pagination
+
 ;;; Code:
 
 (require 'cl-lib)
