@@ -28,7 +28,7 @@ This mode requires a working [EMMS](http://www.gnu.org/software/emms) setup for 
 
 ### [Music Player Daemon](http://www.musicpd.org)
 
-If you are using the Music Player Daemon (MPD) everything should work out of the box after adding the player to the list of *EMMS* players.
+If you are using the *Music Player Daemon (MPD)* everything should work out of the box after adding the player to the list of *EMMS* players.
 
 ``` emacs-lisp
 (require 'emms-player-mpd)
