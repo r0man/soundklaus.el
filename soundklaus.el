@@ -73,11 +73,6 @@
   :type 'string
   :group 'soundklaus-mode)
 
-(defcustom soundklaus-access-token-file "~/.soundklaus.el"
-  "The filename where the SoundCloud access token is saved."
-  :type 'string
-  :group 'soundklaus-mode)
-
 (defcustom soundklaus-download-dir "~/Music/soundcloud"
   "The directory of the download directory."
   :type 'string
