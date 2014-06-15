@@ -115,10 +115,6 @@
 
 (defvar *soundklaus-tracks* (make-hash-table))
 
-(defun soundklaus-blank-p (s)
-  "Return t if S is nil or a blank string, otherwise nil."
-  (or (null s) (not (null (string-match-p "^[ \t\n\r]*$" s)))))
-
 (defun soundklaus-width ()
   "Return the width of the renderable content."
   (- (/ (frame-width) 2) (* soundklaus-padding 2)))

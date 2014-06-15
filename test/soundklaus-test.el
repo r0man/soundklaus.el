@@ -20,18 +20,6 @@
 		 :comment-count 117
 		 :favoritings-count 2287))
 
-(ert-deftest soundklaus-blank-p-test ()
-  (should (soundklaus-blank-p nil))
-  (should (soundklaus-blank-p ""))
-  (should (soundklaus-blank-p " "))
-  (should (soundklaus-blank-p "\t"))
-  (should (soundklaus-blank-p "\n"))
-  (should (soundklaus-blank-p "\r"))
-  (should (soundklaus-blank-p " \r\n"))
-  (should (not (soundklaus-blank-p "x")))
-  (should (not (soundklaus-blank-p " x")))
-  (should (not (soundklaus-blank-p " xx "))))
-
 (ert-deftest soundklaus-remove-nil-values-test ()
   (should (equal `(("client_id" . ,soundklaus-client-id))
 		 (soundklaus-remove-nil-values
