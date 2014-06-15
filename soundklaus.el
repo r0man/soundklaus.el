@@ -58,6 +58,11 @@
   :type 'string
   :group 'soundklaus-mode)
 
+(defcustom soundklaus-buffer "*soundklaus*"
+  "The SoundKlaus buffer name."
+  :type 'string
+  :group 'soundklaus-mode)
+
 (defcustom soundklaus-client-id "988875d70be466a2dd1bfab120c0a306"
   "The SoundKlaus OAuth2 client id."
   :type 'string
@@ -755,8 +760,8 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
 (defmacro soundklaus-with-widget (&rest body)
   "Evaluate BODY with in the context of the SoundCloud widget buffer."
   `(progn
-     (set-buffer (get-buffer-create "*soundklaus*"))
-     (switch-to-buffer-other-window "*soundklaus*")
+     (set-buffer (get-buffer-create soundklaus-buffer))
+     (switch-to-buffer-other-window soundklaus-buffer)
      (kill-all-local-variables)
      (let ((inhibit-read-only t))
        (erase-buffer)
