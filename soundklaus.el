@@ -6,7 +6,7 @@
 ;; URL: https://github.com/r0man/soundklaus.el
 ;; Keywords: soundcloud, music, emms
 ;; Version: 0.1.0
-;; Package-Requires: ((dash "1.5.0") (emacs "24") (emms "3.0") (request "0.1.0") (s "1.6.0") (pkg-info "0.4"))
+;; Package-Requires: ((dash "1.5.0") (emacs "24") (emms "3.0") (request "0.1.0") (s "1.6.0") (pkg-info "0.4") (cl-lib "0.5"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -31,7 +31,7 @@
 ;;
 ;;; Code:
 
-(eval-when-compile (require 'cl))
+(require 'cl-lib)
 (require 'dash)
 (require 'eieio)
 (require 'emms)
@@ -190,7 +190,7 @@ Argument SLOTS is a list of attributes."
   "Returns the s-expression to define a resource path method.
 Argument NAME is the name of the resource."
   (let* ((slots (soundklaus-path-symbols pattern))
-	 (resource (gensym "resource-")))
+	 (resource (cl-gensym "resource-")))
     `(defmethod ,(soundklaus-intern "path") ((,resource ,(soundklaus-intern name)))
        (soundklaus-replace-slots ,pattern ',slots ,resource))))
 
@@ -422,19 +422,19 @@ association list or hash table only the keys will be underscored."
       (newline)
       (insert (format "mkdir -p %s" (shell-quote-argument directory)))
       (newline)
-      (loop for n from 1 to (length (soundklaus-playlist-tracks playlist)) do
-	    (let* ((track (elt (soundklaus-playlist-tracks playlist) (- n 1)))
-		   (url (soundklaus-track-stream-url track))
-		   (filename (soundklaus-playlist-track-download-filename playlist track n)))
-	      (insert (format "curl -L '%s' -o %s"
-			      url (shell-quote-argument filename)))
-	      (newline)
-	      (insert (format "mp3info -d %s" (shell-quote-argument filename)))
-	      (newline)
-	      (insert (format "mp3info -n %s -t %s %s"
-			      n (shell-quote-argument (soundklaus-track-title track))
-			      (shell-quote-argument filename)))
-	      (newline)))
+      (cl-loop for n from 1 to (length (soundklaus-playlist-tracks playlist)) do
+               (let* ((track (elt (soundklaus-playlist-tracks playlist) (- n 1)))
+                      (url (soundklaus-track-stream-url track))
+                      (filename (soundklaus-playlist-track-download-filename playlist track n)))
+                 (insert (format "curl -L '%s' -o %s"
+                                 url (shell-quote-argument filename)))
+                 (newline)
+                 (insert (format "mp3info -d %s" (shell-quote-argument filename)))
+                 (newline)
+                 (insert (format "mp3info -n %s -t %s %s"
+                                 n (shell-quote-argument (soundklaus-track-title track))
+                                 (shell-quote-argument filename)))
+                 (newline)))
       (buffer-string))))
 
 (defmethod soundklaus-download ((playlist soundklaus-playlist))
@@ -683,13 +683,13 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
      (propertize (soundklaus-playlist-time playlist) 'face 'bold))
     (put-text-property start (point) :soundklaus-media playlist)
     (soundklaus-horizontal-rule)
-    (loop for n from 1 to (length (soundklaus-playlist-tracks playlist)) do
-	  (let* ((track (elt (soundklaus-playlist-tracks playlist) (- n 1)))
-		 (start (point)))
-	    (soundklaus-render-row
-	     (format "%02d  %s " n (soundklaus-track-title track))
-	     (soundklaus-format-duration (soundklaus-track-duration track)))
-	    (put-text-property start (point) :soundklaus-media track)))
+    (cl-loop for n from 1 to (length (soundklaus-playlist-tracks playlist)) do
+             (let* ((track (elt (soundklaus-playlist-tracks playlist) (- n 1)))
+                    (start (point)))
+               (soundklaus-render-row
+                (format "%02d  %s " n (soundklaus-track-title track))
+                (soundklaus-format-duration (soundklaus-track-duration track)))
+               (put-text-property start (point) :soundklaus-media track)))
     (widget-insert "\n")))
 
 (defmacro soundklaus-with-widget (&rest body)
