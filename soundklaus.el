@@ -677,8 +677,8 @@ at `path`, parse the response as JSON and call `callback`."
   "Make an instance of CLASS and initialize it's slots from the ASSOC-LIST."
   (let ((instance (make-instance class)))
     (mapc (lambda (slot)
-	    (let ((key (soundklaus-underscore slot))
-		  (value (cdr (assoc key assoc-list))))
+	    (let* ((key (soundklaus-underscore slot))
+		   (value (cdr (assoc key assoc-list))))
 	      (set-slot-value instance slot value)))
 	  (aref (class-v class) class-public-a))
     instance))
