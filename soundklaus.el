@@ -29,15 +29,6 @@
 
 ;; Search and play tracks and playlists from SoundCloud in Emacs via EMMS.
 
-;;; Installation:
-
-;; Available as a package on MELPA.
-
-;; (add-to-list 'package-archives
-;;              '("melpa" . "http://melpa.milkbox.net/packages/") t)
-;;
-;; M-x package-install soundklaus
-
 ;;; Usage:
 
 ;; M-x soundklaus-connect - Authenticate with SoundCloud
