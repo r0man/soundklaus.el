@@ -176,7 +176,7 @@ Argument ATTRIBUTE is the name of the slot."
 Argument NAME is the resource name.
 Argument NAME is documentation string of the class.
 Argument SLOTS is a list of attributes."
-  (let* ((class (intern (format "soundklaus-%s" name))))
+  (let ((class (intern (format "soundklaus-%s" name))))
     `(defclass ,class ()
        ,(mapcar (lambda (slot)
 		  (soundklaus-define-slot name slot))
@@ -221,8 +221,8 @@ Argument SLOTS is a list of attributes."
 (defun soundklaus-define-path (name pattern)
   "Returns the s-expression to define a resource path method.
 Argument NAME is the name of the resource."
-  (let* ((slots (soundklaus-path-symbols pattern))
-	 (resource (cl-gensym "resource-")))
+  (let ((slots (soundklaus-path-symbols pattern))
+	(resource (cl-gensym "resource-")))
     `(defmethod ,(soundklaus-intern "path") ((,resource ,(soundklaus-intern name)))
        (soundklaus-replace-slots ,pattern ',slots ,resource))))
 
@@ -300,8 +300,8 @@ Argument NAME is the name of the resource."
       (setf next (cdr (assoc 'next_href assoc-list)))
       (setf content (delq nil (mapcar
 			       (lambda (resource)
-				 (let* ((type (cdr (assoc 'type resource)))
-					(origin (cdr (assoc 'origin resource))))
+				 (let ((type (cdr (assoc 'type resource)))
+				       (origin (cdr (assoc 'origin resource))))
 				   (cond
 				    ;; TODO: Load tracks of playlist somehow
 				    ;; ((equal type "playlist")
@@ -464,16 +464,16 @@ association list or hash table only the keys will be underscored."
 
 (defun soundklaus-tag-track (track)
   "Tag the SoundCloud TRACK."
-  (let* ((filename (soundklaus-track-download-filename track)))
+  (let ((filename (soundklaus-track-download-filename track)))
     (shell-command (format "mp3info -d %s" (shell-quote-argument filename)))
     (shell-command (format "mp3info -t %s %s"
 			   (shell-quote-argument (soundklaus-track-title track))
 			   (shell-quote-argument filename)))))
 
 (defmethod soundklaus-download ((media soundklaus-track))
-  (let* ((url (soundklaus-track-stream-url media))
-	 (buffer (format "*soundklaus-download-%s*" (soundklaus-track-id media)))
-	 (filename (soundklaus-track-download-filename media)))
+  (let ((url (soundklaus-track-stream-url media))
+	(buffer (format "*soundklaus-download-%s*" (soundklaus-track-id media)))
+	(filename (soundklaus-track-download-filename media)))
     (make-directory (file-name-directory filename) t)
     (set-process-sentinel
      (start-process "SoundCloud Download" buffer "curl" "-L" url "-o" filename)
@@ -687,8 +687,8 @@ at `path`, parse the response as JSON and call `callback`."
   "Make an instance of CLASS and initialize it's slots from the ASSOC-LIST."
   (let ((instance (make-instance class)))
     (mapc (lambda (slot)
-	    (let* ((key (soundklaus-underscore slot))
-		   (value (cdr (assoc key assoc-list))))
+	    (let ((key (soundklaus-underscore slot))
+		  (value (cdr (assoc key assoc-list))))
 	      (set-slot-value instance slot value)))
 	  (aref (class-v class) class-public-a))
     instance))
@@ -759,8 +759,8 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
     (put-text-property start (point) :soundklaus-media playlist)
     (soundklaus-horizontal-rule)
     (cl-loop for n from 1 to (length (soundklaus-playlist-tracks playlist)) do
-             (let* ((track (elt (soundklaus-playlist-tracks playlist) (- n 1)))
-                    (start (point)))
+             (let ((track (elt (soundklaus-playlist-tracks playlist) (- n 1)))
+		   (start (point)))
                (soundklaus-render-row
                 (format "%02d  %s " n (soundklaus-track-title track))
                 (soundklaus-format-duration (soundklaus-track-duration track)))
