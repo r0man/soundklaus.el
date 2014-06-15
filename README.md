@@ -16,9 +16,13 @@ You can install `soundklaus.el` with the following command:
 
 This mode requires a working [EMMS](http://www.gnu.org/software/emms) setup for Emacs. Follow the *EMMS* [Quick-Start Guide](http://www.gnu.org/software/emms/quickstart.html) to configure *EMMS*.
 
+## Usage
+
+You can search songs with `M-x soundklaus-tracks` and playlists with `M-x soundklaus-playlists`. In the `*soundklaus*` buffer you can move to the next song with `C-n` or `n`, and to the previous one with `C-p` or `p`. Pressing `RET` plays the current song, and `a` adds the current song at point to the *EMMS* playlist.
+
 ## Authentication
 
-You need to authorize *soundklaus.el* to access your SoundCloud account. Your web browser should open Emacs via `emacsclient` for the [OAuth2](http://oauth.net/2) callback URL  `soundklaus://oauth/callback`. On a Linux system you can configure this by adding the following content to the  `~/.local/share/applications/soundklaus.desktop` file in your home directory.
+Some commands like `M-x soundklaus-activities` or `M-x soundklaus-my-tracks` need access to your *SoundCloud* account. Your web browser should open Emacs via `emacsclient` for the [OAuth2](http://oauth.net/2) callback URL  `soundklaus://oauth/callback`. On a Linux system you can configure this by adding the following content to the  `~/.local/share/applications/soundklaus.desktop` file in your home directory.
 
 	[Desktop Entry]
 	Name=SoundKlaus
@@ -32,10 +36,6 @@ You need to authorize *soundklaus.el* to access your SoundCloud account. Your we
 To setup this functionality on other operating systems take a look at the [system setup](http://orgmode.org/worg/org-contrib/org-protocol.html#sec-3) section in [org-protocol.el](http://orgmode.org/worg/org-contrib/org-protocol.html) and adapt it for *soundklaus.el*.
 
 Now you can start the [OAuth2](http://oauth.net/2) authentication dance with `M-x soundklaus-connect`. You should get redirected to *SoundCloud* and allow *soundklaus.el* to access your account. After pressing the `Connect` button on the *SoundCloud* page the browser should open Emacs and set the `soundklaus-access-token` customization variable. You should save and load this variable from a safe place for future sessions.
-
-## Usage
-
-When authentication with *SoundCloud* was successful you can search songs with `M-x soundklaus-tracks` and playlists with `M-x soundklaus-playlists`. In the `*soundklaus*` buffer you can move to the next song with `C-n` or `n`, and to the previous one with `C-p` or `p`. Pressing `RET` plays the current song, and `a` adds the current song at point to the *EMMS* playlist.
 
 ## Screenshot
 

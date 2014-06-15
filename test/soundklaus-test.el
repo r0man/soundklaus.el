@@ -32,6 +32,12 @@
   (should (not (soundklaus-blank-p " x")))
   (should (not (soundklaus-blank-p " xx "))))
 
+(ert-deftest soundklaus-remove-nil-values-test ()
+  (should (equal `(("client_id" . ,soundklaus-client-id))
+		 (soundklaus-remove-nil-values
+		  `(("client_id" . ,soundklaus-client-id)
+		    ("oauth_token" . ,soundklaus-access-token))))))
+
 (ert-deftest soundklaus-make-user-test ()
   (let ((user soundklaus-example-user))
     (should (equal 8928131 (soundklaus-user-id user)))
@@ -54,10 +60,13 @@
   (should (equal "00:08:22" (soundklaus-track-time soundklaus-example-track))))
 
 (ert-deftest soundklaus-track-stream-url-test ()
-  (should (equal (format "https://api.soundcloud.com/tracks/40258263/stream?client_id=%s&oauth_token=%s"
-			 soundklaus-client-id
-			 soundklaus-access-token)
-		 (soundklaus-track-stream-url soundklaus-example-track))))
+  (should (equal (format "https://api.soundcloud.com/tracks/40258263/stream?client_id=%s" soundklaus-client-id)
+		 (soundklaus-track-stream-url soundklaus-example-track)))
+  (let ((soundklaus-access-token "1-82657-450979-f92c55f37ce760776"))
+    (should (equal (format "https://api.soundcloud.com/tracks/40258263/stream?client_id=%s&oauth_token=%s"
+			   soundklaus-client-id
+			   soundklaus-access-token)
+		   (soundklaus-track-stream-url soundklaus-example-track)))))
 
 (ert-deftest soundklaus-format-duration-test ()
   (should (equal "00:00:00" (soundklaus-format-duration 0)))
@@ -90,6 +99,8 @@
   (should (equal (soundklaus-url-encode "=") "%3D"))
   (should (equal (soundklaus-url-encode "a 1") "a%201"))
   (should (equal (soundklaus-url-encode '(a-1 1)) "a-1=1"))
+  (should (equal (soundklaus-url-encode '((a 1) (b nil))) "a=1"))
+  (should (equal (soundklaus-url-encode '((a . 1) (b . nil))) "a=1"))
   (should (equal (soundklaus-url-encode '((a-1 1) (b-2 2))) "a-1=1&b-2=2"))
   (should (equal (soundklaus-url-encode '((a-1 . 1) (b-2 . 2))) "a-1=1&b-2=2")))
 

@@ -157,6 +157,20 @@
   "Return the URL to the RESOURCE on SoundCloud."
   (concat soundklaus-api-root (soundklaus-path resource)))
 
+(defmacro soundklaus-with-access-token (&rest body)
+  "Ensure that `soundklaus-access-token` is not blank, and raise
+  an error otherwise."
+  `(if (s-blank? soundklaus-access-token)
+       (message "Not authenticated with SoundCloud. Try M-x soundklaus-connect.")
+     (progn ,@body)))
+
+(defun soundklaus-remove-nil-values (assoc-list)
+  "Remove all elements from ASSOC-LIST where the value is nil."
+  (delq nil (mapcar (lambda (element)
+		      (if (cdr element)
+			  element))
+		    assoc-list)))
+
 (defun soundklaus-define-slot (name attribute)
   "Return the s-expression to define a resource slot.
 Argument NAME is the name of the class.
@@ -352,10 +366,14 @@ number, string, symbol or an association list."
     (intern (soundklaus-url-encode (symbol-name params))))
    ((listp params)
     (if (listp (car params))
-        (mapconcat 'soundklaus-url-encode params "&")
-      (format "%s=%s"
-              (soundklaus-url-encode (car params))
-              (soundklaus-url-encode (if (atom (cdr params)) (cdr params) (cadr params))))))
+        (s-join "&" (delq nil (mapcar 'soundklaus-url-encode params)))
+      (let ((value (if (atom (cdr params))
+		       (cdr params)
+		     (cadr params))))
+	(if value
+	    (format "%s=%s"
+		    (soundklaus-url-encode (car params))
+		    (soundklaus-url-encode value))))))
    (t (url-hexify-string (format "%s" params)))))
 
 (defun soundklaus-safe-path (path)
@@ -399,8 +417,10 @@ number, string, symbol or an association list."
 `soundklaus-client-id` and `soundklaus-access-token` as query
 parameters."
   (concat (slot-value track 'stream-url) "?"
-	  (soundklaus-url-encode `(("client_id" ,soundklaus-client-id)
-				   ("oauth_token" ,soundklaus-access-token)))))
+	  (soundklaus-url-encode
+	   (soundklaus-remove-nil-values
+	    `(("client_id" . ,soundklaus-client-id)
+	      ("oauth_token" . ,soundklaus-access-token))))))
 
 (defun soundklaus-track-time (track)
   "Return the TRACK duration formatted as HH:MM:SS."
@@ -614,8 +634,7 @@ association list or hash table only the keys will be underscored."
 				      (error-description (cadr (assoc "error_description" params))))
 				  (when access-token
 				    (setq soundklaus-access-token access-token)
-				    (message (concat "Authentication with SoundCloud complete. "
-						     "Try M-x soundklaus-tracks to find tracks.")))
+				    (message "Authentication with SoundCloud complete."))
 				  (when error-code
 				    (message "Authentication with SoundCloud failed. %s"
 					     (replace-regexp-in-string "+" " " (or error-description error-code))))
@@ -629,8 +648,9 @@ association list or hash table only the keys will be underscored."
 
 (defun soundklaus-append-default-params (params)
   "Set the default request PARAMS in `params`."
-  (append params `(("client_id" . ,(format "%s" soundklaus-client-id))
-		   ("oauth_token" . ,(format "%s" soundklaus-access-token)))))
+  (soundklaus-remove-nil-values
+   (append params `(("client_id" . ,soundklaus-client-id)
+		    ("oauth_token" . ,soundklaus-access-token)))))
 
 (defun soundklaus-register-tracks (tracks)
   "Register all TRACKS by id in the *soundklaus-tracks* hash table."
@@ -795,12 +815,13 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
 (defun soundklaus-activities ()
   "List activities on SoundCloud."
   (interactive)
-  (soundklaus-request
-   :get "/me/activities"
-   `(("limit" . ,(number-to-string soundklaus-activity-limit)))
-   (function*
-    (lambda (&key data &allow-other-keys)
-      (soundklaus-render-activities (soundklaus-make-collection data))))))
+  (soundklaus-with-access-token
+   (soundklaus-request
+    :get "/me/activities"
+    `(("limit" . ,(number-to-string soundklaus-activity-limit)))
+    (function*
+     (lambda (&key data &allow-other-keys)
+       (soundklaus-render-activities (soundklaus-make-collection data)))))))
 
 ;;;###autoload
 (defun soundklaus-tracks (query)
@@ -830,23 +851,25 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
 (defun soundklaus-my-playlists ()
   "List your playlists on SoundCloud."
   (interactive)
-  (soundklaus-request
-   :get "/me/playlists"
-   `(("limit" . ,(number-to-string soundklaus-playlist-limit)))
-   (function*
-    (lambda (&key data &allow-other-keys)
-      (soundklaus-render-playlists (mapcar 'soundklaus-make-playlist data))))))
+  (soundklaus-with-access-token
+   (soundklaus-request
+    :get "/me/playlists"
+    `(("limit" . ,(number-to-string soundklaus-playlist-limit)))
+    (function*
+     (lambda (&key data &allow-other-keys)
+       (soundklaus-render-playlists (mapcar 'soundklaus-make-playlist data)))))))
 
 ;;;###autoload
 (defun soundklaus-my-tracks ()
   "List your tracks on SoundCloud."
   (interactive)
-  (soundklaus-request
-   :get "/me/tracks"
-   `(("limit" . ,(number-to-string soundklaus-track-limit)))
-   (function*
-    (lambda (&key data &allow-other-keys)
-      (soundklaus-render-tracks (mapcar 'soundklaus-make-track data))))))
+  (soundklaus-with-access-token
+   (soundklaus-request
+    :get "/me/tracks"
+    `(("limit" . ,(number-to-string soundklaus-track-limit)))
+    (function*
+     (lambda (&key data &allow-other-keys)
+       (soundklaus-render-tracks (mapcar 'soundklaus-make-track data)))))))
 
 (defvar soundklaus-mode-map
   (let ((map (make-sparse-keymap)))
