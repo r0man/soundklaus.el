@@ -37,7 +37,7 @@ If you are using the Music Player Daemon (MPD) everything should work out of the
 
 ### [VLC Media Player](http://www.videolan.org)
 
-The default configuration of VLC(http://www.videolan.org) that ships with *EMMS* doesn't support HTTPS. This can be fixed by changing the regular expression of the player.
+The default configuration of *VLC* that ships with *EMMS* doesn't support HTTPS. This can be fixed by changing the regular expression of the player.
 
 ``` emacs-lisp
 (require 'emms-player-vlc)
