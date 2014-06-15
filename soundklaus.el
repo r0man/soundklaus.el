@@ -114,9 +114,11 @@
 
 (defun soundklaus-horizontal-rule ()
   "Insert a horizontal rule into the buffer."
-  (widget-insert (concat (make-string soundklaus-padding ?\s)
-			 (make-string (- (soundklaus-width) soundklaus-padding) ?-)
-			 "\n")))
+  (widget-insert
+   (concat (make-string soundklaus-padding ?\s)
+	   (make-string (- (soundklaus-width) soundklaus-padding) ?-)
+	   (make-string soundklaus-padding ?\s)
+	   "\n")))
 
 (defgeneric soundklaus-download (media)
   "Download the MEDIA from SoundCloud.")
