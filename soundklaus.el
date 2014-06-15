@@ -41,12 +41,12 @@
 ;;; Usage:
 
 ;; M-x soundklaus-connect - Authenticate with SoundCloud
+;; M-x soundklaus-activities - List activities on SoundCloud
 ;; M-x soundklaus-playlists - Find playlists on SoundCloud
 ;; M-x soundklaus-tracks - Find tracks on SoundCloud
 
 ;; Todo:
 
-;; - activities
 ;; - pagination
 
 ;;; Code:
@@ -92,18 +92,23 @@
   :type 'string
   :group 'soundklaus-mode)
 
+(defcustom soundklaus-activity-limit 40
+  "The number of activities to fetch from SoundCloud at once."
+  :type 'integer
+  :group 'soundklaus-mode)
+
 (defcustom soundklaus-playlist-limit 10
-  "The number of playlists to fetch from the SoundCloud at once."
+  "The number of playlists to fetch from SoundCloud at once."
   :type 'integer
   :group 'soundklaus-mode)
 
 (defcustom soundklaus-track-limit 40
-  "The number of tracks to fetch from the SoundCloud at once."
+  "The number of tracks to fetch from SoundCloud at once."
   :type 'integer
   :group 'soundklaus-mode)
 
 (defcustom soundklaus-user-limit 20
-  "The number of users to fetch from the SoundCloud at once."
+  "The number of users to fetch from SoundCloud at once."
   :type 'integer
   :group 'soundklaus-mode)
 
@@ -261,6 +266,43 @@ Argument NAME is the name of the resource."
    (title "The title of the playlist")
    (tracks "The tracks of the  playlist")
    (duration "The duration of the playlist in milliseconds")))
+
+;; COLLECTION
+
+(defclass soundklaus-collection ()
+  ((content
+    :initarg :content
+    :accessor soundklaus-collection-content
+    :documentation "The content of the collection.")
+   (future
+    :initarg :future
+    :accessor soundklaus-collection-future
+    :documentation "The URL to the page of the collection that
+    will contain future resources of the collection.")
+   (next
+    :initarg :next
+    :accessor soundklaus-collection-next
+    :documentation "The URL to the next page of the collection."))
+  "A collection of resources on SoundCloud.")
+
+(defun soundklaus-make-collection (assoc-list)
+  "Make a SoundCloud collection from an ASSOC-LIST."
+  (let ((collection (make-instance 'soundklaus-collection)))
+    (with-slots (content future next) collection
+      (setf future (cdr (assoc 'future_href assoc-list)))
+      (setf next (cdr (assoc 'next_href assoc-list)))
+      (setf content (delq nil (mapcar
+			       (lambda (resource)
+				 (let* ((type (cdr (assoc 'type resource)))
+					(origin (cdr (assoc 'origin resource))))
+				   (cond
+				    ;; TODO: Load tracks of playlist somehow
+				    ;; ((equal type "playlist")
+				    ;;  (soundklaus-make-playlist origin))
+				    ((equal type "track")
+				     (soundklaus-make-track origin)))))
+			       (cdr (assoc 'collection assoc-list)))))
+      collection)))
 
 ;; EMMS Sources
 
@@ -729,6 +771,13 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
      (goto-char 0)
      (soundklaus-next-media)))
 
+(defun soundklaus-render-activities (collection)
+  "Render SoundCloud COLLECTION as an Emacs widget."
+  (soundklaus-with-widget
+   (widget-insert "\n  >> ACTIVITIES\n\n")
+   (let ((activities (soundklaus-collection-content collection)))
+     (mapcar 'soundklaus-render-list-item activities))))
+
 (defun soundklaus-render-tracks (tracks)
   "Render SoundCloud TRACKS as an Emacs widget."
   (soundklaus-with-widget
@@ -740,6 +789,18 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (soundklaus-with-widget
    (widget-insert "\n  >> PLAYLISTS\n\n")
    (mapc 'soundklaus-render-list-item playlists)))
+
+
+;;;###autoload
+(defun soundklaus-activities ()
+  "List activities on SoundCloud."
+  (interactive)
+  (soundklaus-request
+   :get "/me/activities"
+   `(("limit" . ,(number-to-string soundklaus-activity-limit)))
+   (function*
+    (lambda (&key data &allow-other-keys)
+      (soundklaus-render-activities (soundklaus-make-collection data))))))
 
 ;;;###autoload
 (defun soundklaus-tracks (query)
