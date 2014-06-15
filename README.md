@@ -18,7 +18,31 @@ You can install `soundklaus.el` with the following command:
 
 ## Configuration
 
-This mode requires a working [EMMS](http://www.gnu.org/software/emms) setup for Emacs. Follow the *EMMS* [Quick-Start Guide](http://www.gnu.org/software/emms/quickstart.html) to configure *EMMS*.
+This mode requires a working [EMMS](http://www.gnu.org/software/emms) setup for Emacs. The following code from the *EMMS* [Quick-Start Guide](http://www.gnu.org/software/emms/quickstart.html) should work with some minor tweaks.
+
+	(require 'emms-setup)
+	(emms-standard)
+	(emms-default-players)
+
+### [Music Player Daemon](http://www.musicpd.org)
+
+If you are using the Music Player Daemon (MPD) everything should work out of the box after adding the player to the list of *EMMS* players.
+
+    (require 'emms-player-mpd)
+    (add-to-list 'emms-player-list 'emms-player-mpd)
+
+### [VLC Media Player](http://www.videolan.org)
+
+The default configuration of VLC(http://www.videolan.org) that ships with *EMMS* doesn't support HTTPS. This can be fixed by changing the regular expression of the player.
+
+    (require 'emms-player-vlc)
+	(define-emms-simple-player vlc '(file url)
+	  (concat "\\`\\(https?\\|mms\\)://\\|"
+		  (emms-player-simple-regexp
+		   "ogg" "mp3" "wav" "mpg" "mpeg" "wmv" "wma"
+		   "mov" "avi" "divx" "ogm" "ogv" "asf" "mkv"
+		   "rm" "rmvb" "mp4" "flac" "vob" "m4a" "ape"))
+	  "vlc" "--intf=rc")
 
 ## Usage
 
