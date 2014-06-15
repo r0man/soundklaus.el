@@ -322,7 +322,7 @@ number, string, symbol or an association list."
   	   (soundklaus-safe-path (soundklaus-playlist-title playlist)))))
 
 (defun soundklaus-playlist-track-download-filename (playlist track n)
-  "Returns the download filename of the TRACK number `n` in PLAYLIST."
+  "Returns the download filename of the TRACK number N in PLAYLIST."
   (expand-file-name
    (concat (file-name-as-directory (soundklaus-playlist-download-directory playlist))
 	   (format "%02d-%s.mp3" n (soundklaus-safe-path (soundklaus-track-title track))))))
