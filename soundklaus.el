@@ -555,6 +555,15 @@ association list or hash table only the keys will be underscored."
   (let ((media (soundklaus-current-media)))
     (if media (soundklaus-download media))))
 
+(defun soundklaus-kill-buffer ()
+  "Kill the `soundklaus-buffer` and delete the current window."
+  (interactive)
+  (let ((buffer (get-buffer soundklaus-buffer)))
+    (when(equal buffer (current-buffer))
+      (delete-window))
+    (when buffer
+      (kill-buffer buffer))))
+
 (defun soundklaus-next-media ()
   "Move point to the next SoundCloud track."
   (interactive)
@@ -865,6 +874,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
     (define-key map (kbd "d") 'soundklaus-download-current)
     (define-key map (kbd "n") 'soundklaus-next-media)
     (define-key map (kbd "p") 'soundklaus-prev-media)
+    (define-key map (kbd "q") 'soundklaus-kill-buffer)
     map)
   "Keymap for SoundKlaus mode.")
 
