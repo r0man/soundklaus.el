@@ -171,15 +171,17 @@ Argument ATTRIBUTE is the name of the slot."
     :accessor ,(intern (format "soundklaus-%s-%s" name (car attribute)))
     :documentation ,(cadr attribute)))
 
-(defun soundklaus-define-class (name slots)
+(defun soundklaus-define-class (name doc slots)
   "Return the s-expression to define a resource class.
 Argument NAME is the resource name.
+Argument NAME is documentation string of the class.
 Argument SLOTS is a list of attributes."
   (let* ((class (intern (format "soundklaus-%s" name))))
     `(defclass ,class ()
        ,(mapcar (lambda (slot)
 		  (soundklaus-define-slot name slot))
-		slots))))
+		slots)
+       ,doc)))
 
 (defun soundklaus-path-segments (path)
   "Return the segments of PATH as a list."
@@ -228,7 +230,7 @@ Argument NAME is the name of the resource."
   "Define a SoundCloud resource.
 Argument NAME is the name of the resource."
   `(progn
-     ,(soundklaus-define-class name attributes)
+     ,(soundklaus-define-class name doc attributes)
      ,(soundklaus-define-path name pattern)))
 
 ;; USER: https://developers.soundcloud.com/docs/api/reference#users
