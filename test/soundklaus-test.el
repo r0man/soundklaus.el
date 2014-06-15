@@ -76,11 +76,6 @@
     (should (equal soundklaus-client-id (cdr (assoc "client_id" params))))
     (should (equal soundklaus-access-token (cdr (assoc "oauth_token" params))))))
 
-(ert-deftest soundklaus-register-tracks-test ()
-  (soundklaus-register-tracks (list soundklaus-example-track))
-  (should (equal soundklaus-example-track
-		 (gethash (soundklaus-track-id soundklaus-example-track) *soundklaus-tracks* ))))
-
 (ert-deftest soundklaus-url-encode-test ()
   (should (equal (soundklaus-url-encode "") ""))
   (should (equal (soundklaus-url-encode "x") "x"))

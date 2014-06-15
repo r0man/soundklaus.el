@@ -113,8 +113,6 @@
   :type 'integer
   :group 'soundklaus-mode)
 
-(defvar *soundklaus-tracks* (make-hash-table))
-
 (defun soundklaus-width ()
   "Return the width of the renderable content."
   (- (/ (frame-width) 2) (* soundklaus-padding 2)))
@@ -640,12 +638,6 @@ association list or hash table only the keys will be underscored."
   (soundklaus-remove-nil-values
    (append params `(("client_id" . ,soundklaus-client-id)
 		    ("oauth_token" . ,soundklaus-access-token)))))
-
-(defun soundklaus-register-tracks (tracks)
-  "Register all TRACKS by id in the *soundklaus-tracks* hash table."
-  (mapc (lambda (track)
-	  (puthash (soundklaus-track-id track) track *soundklaus-tracks*))
-	tracks))
 
 (defun soundklaus-request-data (method params)
   "Returns the HTTP form PARAMS for a request of type METHOD."
