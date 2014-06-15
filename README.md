@@ -26,18 +26,18 @@ This mode requires a working [EMMS](http://www.gnu.org/software/emms) setup for 
 (emms-default-players)
 ```
 
-### [Music Player Daemon](http://www.musicpd.org)
+### Music Player Daemon
 
-If you are using the *Music Player Daemon (MPD)* everything should work out of the box after adding the player to the list of *EMMS* players.
+If you are using the [Music Player Daemon](http://www.musicpd.org) everything should work out of the box after adding the player to the list of *EMMS* players.
 
 ``` emacs-lisp
 (require 'emms-player-mpd)
 (add-to-list 'emms-player-list 'emms-player-mpd)
 ```
 
-### [VLC Media Player](http://www.videolan.org)
+### VLC Media Player
 
-The default configuration of *VLC* that ships with *EMMS* doesn't support HTTPS. This can be fixed by changing the regular expression of the player.
+The default configuration of the [VLC Media Player](http://www.videolan.org) that ships with *EMMS* doesn't support HTTPS. This can be fixed by changing the regular expression of the player.
 
 ``` emacs-lisp
 (require 'emms-player-vlc)
