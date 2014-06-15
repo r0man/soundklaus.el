@@ -20,29 +20,35 @@ You can install `soundklaus.el` with the following command:
 
 This mode requires a working [EMMS](http://www.gnu.org/software/emms) setup for Emacs. The following code from the *EMMS* [Quick-Start Guide](http://www.gnu.org/software/emms/quickstart.html) should work with some minor tweaks.
 
-	(require 'emms-setup)
-	(emms-standard)
-	(emms-default-players)
+``` emacs-lisp
+(require 'emms-setup)
+(emms-standard)
+(emms-default-players)
+```
 
 ### [Music Player Daemon](http://www.musicpd.org)
 
 If you are using the Music Player Daemon (MPD) everything should work out of the box after adding the player to the list of *EMMS* players.
 
-    (require 'emms-player-mpd)
-    (add-to-list 'emms-player-list 'emms-player-mpd)
+``` emacs-lisp
+(require 'emms-player-mpd)
+(add-to-list 'emms-player-list 'emms-player-mpd)
+```
 
 ### [VLC Media Player](http://www.videolan.org)
 
 The default configuration of VLC(http://www.videolan.org) that ships with *EMMS* doesn't support HTTPS. This can be fixed by changing the regular expression of the player.
 
-    (require 'emms-player-vlc)
-	(define-emms-simple-player vlc '(file url)
-	  (concat "\\`\\(https?\\|mms\\)://\\|"
-		  (emms-player-simple-regexp
-		   "ogg" "mp3" "wav" "mpg" "mpeg" "wmv" "wma"
-		   "mov" "avi" "divx" "ogm" "ogv" "asf" "mkv"
-		   "rm" "rmvb" "mp4" "flac" "vob" "m4a" "ape"))
-	  "vlc" "--intf=rc")
+``` emacs-lisp
+(require 'emms-player-vlc)
+(define-emms-simple-player vlc '(file url)
+  (concat "\\`\\(https?\\|mms\\)://\\|"
+	  (emms-player-simple-regexp
+	   "ogg" "mp3" "wav" "mpg" "mpeg" "wmv" "wma"
+	   "mov" "avi" "divx" "ogm" "ogv" "asf" "mkv"
+	   "rm" "rmvb" "mp4" "flac" "vob" "m4a" "ape"))
+  "vlc" "--intf=rc")
+```
 
 ## Usage
 
@@ -52,14 +58,15 @@ You can search songs with `M-x soundklaus-tracks` and playlists with `M-x soundk
 
 Some commands like `M-x soundklaus-activities` or `M-x soundklaus-my-tracks` need access to your *SoundCloud* account. Your web browser should open Emacs via `emacsclient` for the [OAuth2](http://oauth.net/2) callback URL  `soundklaus://oauth/callback`. On a Linux system you can configure this by adding the following content to the  `~/.local/share/applications/soundklaus.desktop` file in your home directory.
 
-	[Desktop Entry]
-	Name=SoundKlaus
-	Exec=emacsclient %u
-	Icon=emacs-icon
-	Type=Application
-	Terminal=false
-	MimeType=x-scheme-handler/soundklaus;
-
+```
+[Desktop Entry]
+Name=SoundKlaus
+Exec=emacsclient %u
+Icon=emacs-icon
+Type=Application
+Terminal=false
+MimeType=x-scheme-handler/soundklaus;
+```
 
 To setup this functionality on other operating systems take a look at the [system setup](http://orgmode.org/worg/org-contrib/org-protocol.html#sec-3) section in [org-protocol.el](http://orgmode.org/worg/org-contrib/org-protocol.html) and adapt it for *soundklaus.el*.
 
