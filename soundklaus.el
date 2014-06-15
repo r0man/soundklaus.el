@@ -782,7 +782,8 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   "Keymap for SoundKlaus mode.")
 
 (define-minor-mode soundklaus-mode
-  "The SoundKlaus minor mode."
+  "Play SoundCloud music in Emacs.
+\\{soundklaus-mode-map}"
   :init-value nil
   :lighter " SoundKlaus"
   :keymap 'soundklaus-mode-map
