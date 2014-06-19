@@ -44,10 +44,10 @@
 
 (require 'cl-lib)
 (require 'dash)
+(require 'deferred)
 (require 'eieio)
 (require 'emms)
 (require 'json)
-(require 'request)
 (require 's)
 (require 'widget)
 
@@ -644,37 +644,23 @@ association list or hash table only the keys will be underscored."
       (ad-set-arg 0 files)
       ad-do-it)))
 
-(defun soundklaus-append-default-params (params)
-  "Set the default request PARAMS in `params`."
-  (soundklaus-remove-nil-values
-   (append params `(("client_id" . ,soundklaus-client-id)
-		    ("oauth_token" . ,soundklaus-access-token)))))
+(defun soundklaus-parse-response (buffer)
+  "Parse the JSON response from BUFFER."
+  (with-current-buffer buffer
+    (goto-char (point-min))
+    (re-search-forward "^$" nil 'move)
+    (json-read)))
 
-(defun soundklaus-request-data (method params)
-  "Returns the HTTP form PARAMS for a request of type METHOD."
-  (if (or (equal :post method) (equal :put method))
-      (soundklaus-append-default-params params)))
-
-(defun soundklaus-request-params (method params)
-  "Returns the HTTP query PARAMS for a request of type METHOD."
-  (if (equal :get method)
-      (soundklaus-append-default-params params)))
-
-(defun soundklaus-request-type (method)
-  "Return the HTTP request METHOD as an uppercase string."
-  (upcase (replace-regexp-in-string ":" "" (format "%s" method))))
-
-(defun soundklaus-request (method path params on-success)
+(defun soundklaus-request (method path params)
   "Send an HTTP `method` request to the SoundCloud API endpoint
 at `path`, parse the response as JSON and call `callback`."
-  (request
-   (concat soundklaus-api-root path)
-   :type (soundklaus-request-type method)
-   :data (soundklaus-request-data method params)
-   :params (soundklaus-request-params method params)
-   :headers '(("Accept" . "application/json"))
-   :parser 'json-read
-   :success on-success))
+  (let ((url-request-extra-headers '(("Accept" . "application/json"))))
+    (deferred:url-retrieve
+      (concat soundklaus-api-root path "?"
+	      (soundklaus-url-encode
+	       (soundklaus-remove-nil-values
+		(append params `(("client_id" . ,soundklaus-client-id)
+				 ("oauth_token" . ,soundklaus-access-token)))))))))
 
 (defun soundklaus-save-response (response filename)
   "Save the RESPONSE of a SoundCloud API request as JSON in FILENAME."
@@ -807,61 +793,70 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
 (defun soundklaus-activities ()
   "List activities on SoundCloud."
   (interactive)
-  (soundklaus-with-access-token
-   (soundklaus-request
-    :get "/me/activities"
-    `(("limit" . ,(number-to-string soundklaus-activity-limit)))
-    (function*
-     (lambda (&key data &allow-other-keys)
-       (soundklaus-render-activities (soundklaus-make-collection data)))))))
+  (deferred:$
+    (soundklaus-request
+     :get "/me/activities"
+     `(("limit" . ,(number-to-string soundklaus-activity-limit))))
+    (deferred:nextc it
+      (lambda (buffer)
+	(let ((data (soundklaus-parse-response buffer)))
+	  (soundklaus-render-activities (soundklaus-make-collection data)))))))
 
 ;;;###autoload
 (defun soundklaus-tracks (query)
   "List all tracks on SoundCloud matching QUERY."
   (interactive "MQuery: ")
-  (soundklaus-request
-   :get "/tracks"
-   `(("limit" . ,(number-to-string soundklaus-track-limit))
-     ("q" . ,query))
-   (function*
-    (lambda (&key data &allow-other-keys)
-      (soundklaus-render-tracks (mapcar 'soundklaus-make-track data))))))
+  (deferred:$
+    (soundklaus-request
+     :get "/tracks"
+     `(("limit" . ,(number-to-string soundklaus-track-limit))
+       ("q" . ,query)))
+    (deferred:nextc it
+      (lambda (buffer)
+	(let ((data (soundklaus-parse-response buffer)))
+	  (soundklaus-render-tracks (mapcar 'soundklaus-make-track data)))))))
 
 ;;;###autoload
 (defun soundklaus-playlists (query)
   "List all playlists on SoundCloud matching QUERY."
   (interactive "MQuery: ")
-  (soundklaus-request
-   :get "/playlists"
-   `(("limit" . ,(number-to-string soundklaus-playlist-limit))
-     ("q" . ,query))
-   (function*
-    (lambda (&key data &allow-other-keys)
-      (soundklaus-render-playlists (mapcar 'soundklaus-make-playlist data))))))
+  (deferred:$
+    (soundklaus-request
+     :get "/playlists"
+     `(("limit" . ,(number-to-string soundklaus-playlist-limit))
+       ("q" . ,query)))
+    (deferred:nextc it
+      (lambda (buffer)
+	(let ((data (soundklaus-parse-response buffer)))
+	  (soundklaus-render-playlists (mapcar 'soundklaus-make-playlist data)))))))
 
 ;;;###autoload
 (defun soundklaus-my-playlists ()
   "List your playlists on SoundCloud."
   (interactive)
   (soundklaus-with-access-token
-   (soundklaus-request
-    :get "/me/playlists"
-    `(("limit" . ,(number-to-string soundklaus-playlist-limit)))
-    (function*
-     (lambda (&key data &allow-other-keys)
-       (soundklaus-render-playlists (mapcar 'soundklaus-make-playlist data)))))))
+   (deferred:$
+     (soundklaus-request
+      :get "/me/playlists"
+      `(("limit" . ,(number-to-string soundklaus-playlist-limit))))
+     (deferred:nextc it
+       (lambda (buffer)
+	 (let ((data (soundklaus-parse-response buffer)))
+	   (soundklaus-render-playlists (mapcar 'soundklaus-make-playlist data))))))))
 
 ;;;###autoload
 (defun soundklaus-my-tracks ()
   "List your tracks on SoundCloud."
   (interactive)
   (soundklaus-with-access-token
-   (soundklaus-request
-    :get "/me/tracks"
-    `(("limit" . ,(number-to-string soundklaus-track-limit)))
-    (function*
-     (lambda (&key data &allow-other-keys)
-       (soundklaus-render-tracks (mapcar 'soundklaus-make-track data)))))))
+   (deferred:$
+     (soundklaus-request
+      :get "/me/tracks"
+      `(("limit" . ,(number-to-string soundklaus-track-limit))))
+     (deferred:nextc it
+       (lambda (buffer)
+	 (let ((data (soundklaus-parse-response buffer)))
+	   (soundklaus-render-tracks (mapcar 'soundklaus-make-track data))))))))
 
 (defvar soundklaus-mode-map
   (let ((map (make-sparse-keymap)))

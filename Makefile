@@ -10,8 +10,11 @@ clean:
 	@rm -rf dist
 	@cask clean-elc
 
+compile: .cask
+	@cask exec emacs --batch --eval="(byte-compile-file \"soundklaus.el\")" -q
+
 lint: .cask
-	@cask exec emacs soundklaus.el --batch --eval="(elint-current-buffer)"
+	@cask exec emacs soundklaus.el --batch --eval="(elint-current-buffer)" -q
 
 distclean: clean
 	@rm -rf .cask
