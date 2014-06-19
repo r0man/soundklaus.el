@@ -6,7 +6,7 @@
 ;; URL: https://github.com/r0man/soundklaus.el
 ;; Keywords: soundcloud, music, emms
 ;; Version: 0.1.0
-;; Package-Requires: ((dash "1.5.0") (emacs "24") (emms "3.0") (request "0.1.0") (s "1.6.0") (pkg-info "0.4") (cl-lib "0.5"))
+;; Package-Requires: ((dash "1.5.0") (emacs "24") (emms "3.0") (deferred "0.3.2") (s "1.6.0") (pkg-info "0.4") (cl-lib "0.5"))
 
 ;; This file is NOT part of GNU Emacs.
 
