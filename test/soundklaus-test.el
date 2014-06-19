@@ -62,20 +62,6 @@
   (should (equal "00:01:00" (soundklaus-format-duration (* 60 1000))))
   (should (equal "01:00:00" (soundklaus-format-duration (* 60 60 1000)))))
 
-(ert-deftest soundklaus-request-type-test ()
-  (should (equal "GET" (soundklaus-request-type 'get)))
-  (should (equal "GET" (soundklaus-request-type "get")))
-  (should (equal "GET" (soundklaus-request-type :get))))
-
-(ert-deftest soundklaus-append-default-params-test ()
-  (let* ((soundklaus-access-token "1-82657-450979-f92c55f37ce760776")
-	 (params '(("a" . "1") ("b" . "2")))
-	 (params (soundklaus-append-default-params params)))
-    (should (equal "1" (cdr (assoc "a" params))))
-    (should (equal "2" (cdr (assoc "b" params))))
-    (should (equal soundklaus-client-id (cdr (assoc "client_id" params))))
-    (should (equal soundklaus-access-token (cdr (assoc "oauth_token" params))))))
-
 (ert-deftest soundklaus-url-encode-test ()
   (should (equal (soundklaus-url-encode "") ""))
   (should (equal (soundklaus-url-encode "x") "x"))
