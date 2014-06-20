@@ -54,7 +54,7 @@
 (defvar soundklaus-version "0.1.0"
   "Version number")
 
-;; CUSTOM
+;; Customization
 
 (defcustom soundklaus-access-token nil
   "The OAuth2 access token for the SoundCloud API."
