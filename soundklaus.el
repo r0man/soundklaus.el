@@ -51,9 +51,6 @@
 (require 's)
 (require 'widget)
 
-(defvar soundklaus-version "0.1.0"
-  "Version number")
-
 ;; Customization
 
 (defcustom soundklaus-access-token nil
