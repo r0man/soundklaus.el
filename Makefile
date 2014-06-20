@@ -1,6 +1,6 @@
 CASK = cask
 EMACS = emacs
-EMACSFLAGS = -L .
+EMACSFLAGS = -L . soundklaus.el
 
 all: package
 
@@ -23,7 +23,7 @@ distclean: clean
 	@rm -rf .cask
 
 lint: .cask
-	$(CASK) exec $(EMACS) soundklaus.el --batch --eval="(elint-current-buffer)" -q
+	$(CASK) exec $(EMACS) --batch --eval="(elint-file \"soundklaus.el\")" -Q
 
 package: test checkdoc
 	$(CASK) package
