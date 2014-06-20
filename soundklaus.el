@@ -559,7 +559,7 @@ association list or hash table only the keys will be underscored."
   "Kill the `soundklaus-buffer` and delete the current window."
   (interactive)
   (let ((buffer (get-buffer soundklaus-buffer)))
-    (when(equal buffer (current-buffer))
+    (when (equal buffer (current-buffer))
       (delete-window))
     (when buffer
       (kill-buffer buffer))))
