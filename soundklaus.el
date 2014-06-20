@@ -56,6 +56,11 @@
 
 ;; CUSTOM
 
+(defcustom soundklaus-access-token nil
+  "The OAuth2 access token for the SoundCloud API."
+  :type 'string
+  :group 'soundklaus-mode)
+
 (defcustom soundklaus-api-root "https://api.soundcloud.com"
   "The SoundCloud API root URL."
   :type 'string
@@ -71,18 +76,18 @@
   :type 'string
   :group 'soundklaus-mode)
 
-(defcustom soundklaus-redirect-url "soundklaus://oauth/callback"
-  "The SoundCloud OAuth2 redirect URL."
-  :type 'string
-  :group 'soundklaus-mode)
-
-(defcustom soundklaus-access-token nil
-  "The OAuth2 access token for the SoundCloud API."
-  :type 'string
+(defcustom soundklaus-desktop-entry "~/.local/share/applications/soundklaus.desktop"
+  "The filename of the X Window System desktop entry."
+  :type 'integer
   :group 'soundklaus-mode)
 
 (defcustom soundklaus-download-dir "~/Music/soundcloud"
   "The directory of the download directory."
+  :type 'string
+  :group 'soundklaus-mode)
+
+(defcustom soundklaus-redirect-url "soundklaus://oauth/callback"
+  "The SoundCloud OAuth2 redirect URL."
   :type 'string
   :group 'soundklaus-mode)
 
@@ -847,6 +852,24 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
        (lambda (buffer)
 	 (let ((data (soundklaus-parse-response buffer)))
 	   (soundklaus-render-tracks (mapcar 'soundklaus-make-track data))))))))
+
+;;;###autoload
+(defun soundklaus-install-desktop-entry ()
+  "Install the desktop entry of theX Window System."
+  (interactive)
+  (let ((dir (file-name-directory soundklaus-desktop-entry)))
+    (unless (file-exists-p dir)
+      (make-directory dir))
+    (with-temp-buffer
+      (insert "[Desktop Entry]
+Name=SoundKlaus
+Exec=emacsclient %u
+Icon=emacs-icon
+Type=Application
+Terminal=false
+MimeType=x-scheme-handler/soundklaus;
+")
+      (write-file soundklaus-desktop-entry))))
 
 (defvar soundklaus-mode-map
   (let ((map (make-sparse-keymap)))
