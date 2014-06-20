@@ -687,20 +687,6 @@ of the request."
 	 (seconds (floor (- duration (* hours 3600) (* minutes 60)))))
     (format "%02d:%02d:%02d" hours minutes seconds)))
 
-(defun soundklaus-show-playlist (playlist)
-  "Show the PLAYLIST."
-  (interactive)
-  (soundklaus-request
-   :get (format "%s/playlists/%s" soundklaus-api-root
-		(soundklaus-playlist-id playlist))
-   '()
-   (function*
-    (lambda (&key data &allow-other-keys)
-      (soundklaus-with-widget
-       (let ((playlist (soundklaus-make-playlist data)))
-	 (widget-insert (format "\n  >> PLAYLIST >> %s\n\n" (upcase (soundklaus-playlist-title playlist))))
-	 (mapcar 'soundklaus-render-track (soundklaus-playlist-tracks playlist))))))))
-
 (defun soundklaus-render-row (left right &optional width-right)
   "Render a row with a LEFT and a RIGHT part.
 Optional argument WIDTH-RIGHT is the width of the right argument."
