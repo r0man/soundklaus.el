@@ -234,7 +234,7 @@ documentation string, and SLOTS the attributes of the resource."
      ,(soundklaus-define-class name doc slots)
      ,(soundklaus-define-path name pattern)))
 
-;; USER: https://developers.soundcloud.com/docs/api/reference#users
+;; User: https://developers.soundcloud.com/docs/api/reference#users
 
 (define-soundklaus-resource user "/users/:id"
   "A SoundCloud user"
@@ -249,7 +249,7 @@ documentation string, and SLOTS the attributes of the resource."
    (followings-count "The number of followings of the user")
    (followers-count "The number of followers of the user")))
 
-;; TRACK: https://developers.soundcloud.com/docs/api/reference#tracks
+;; Track: https://developers.soundcloud.com/docs/api/reference#tracks
 
 (define-soundklaus-resource track "/tracks/:id"
   "A SoundCloud track"
@@ -265,7 +265,7 @@ documentation string, and SLOTS the attributes of the resource."
    (comment-count "The number of comments of the track")
    (favoritings-count "The number of time the track has been favorited")))
 
-;; PLAYLIST: https://developers.soundcloud.com/docs/api/reference#playlists
+;; Playlist: https://developers.soundcloud.com/docs/api/reference#playlists
 
 (define-soundklaus-resource playlist "/playlists/:id"
   "A SoundCloud playlist"
@@ -275,7 +275,7 @@ documentation string, and SLOTS the attributes of the resource."
    (tracks "The tracks of the  playlist")
    (duration "The duration of the playlist in milliseconds")))
 
-;; COLLECTION
+;; Resource collection
 
 (defclass soundklaus-collection ()
   ((content
@@ -706,7 +706,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
 			    padding)
 		    left right))))
 
-;; LIST ITEM WIDGETS
+;; List item widgets
 
 (defmethod soundklaus-render-list-item ((track soundklaus-track))
   (let ((start (point)))
