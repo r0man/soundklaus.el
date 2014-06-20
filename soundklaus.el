@@ -669,12 +669,6 @@ of the request."
 		(append params `(("client_id" . ,soundklaus-client-id)
 				 ("oauth_token" . ,soundklaus-access-token)))))))))
 
-(defun soundklaus-save-response (response filename)
-  "Save the RESPONSE of a SoundCloud API request as JSON in FILENAME."
-  (let ((data (request-response-data response)))
-    (make-directory (file-name-directory filename) t)
-    (with-temp-file filename (insert (format "%s" (json-encode data))))))
-
 (defun soundklaus-slurp-instance (class assoc-list)
   "Make an instance of CLASS and initialize it's slots from the ASSOC-LIST."
   (let ((instance (make-instance class)))
