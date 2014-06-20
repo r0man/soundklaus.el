@@ -481,61 +481,22 @@ will be underscored."
 	(buffer (format "*soundklaus-download-%s*" (soundklaus-track-id media)))
 	(filename (soundklaus-track-download-filename media)))
     (make-directory (file-name-directory filename) t)
-    (set-process-sentinel
-     (start-process "SoundCloud Download" buffer "curl" "-L" url "-o" filename)
-     (lambda (process event)
-       (cond
-	((string= "exit" (process-status process))
-	 (let ((buffer (get-buffer buffer)))
-	   (if buffer (kill-buffer buffer)))
-	 (soundklaus-tag-track media)
-	 (message "Download of %s complete." (soundklaus-track-title media))))))
-    (message "Downloading %s ..." (soundklaus-track-title media))))
-
-(defun soundklaus-download-playlist-script (playlist)
-  "Return the content of a shell script to download PLAYLIST."
-  (let ((directory (soundklaus-playlist-download-directory playlist)))
-    (with-temp-buffer
-      (erase-buffer)
-      (insert "#!/usr/bin/env bash")
-      (newline)
-      (insert "set -x")
-      (newline)
-      (insert (format "mkdir -p %s" (shell-quote-argument directory)))
-      (newline)
-      (cl-loop for n from 1 to (length (soundklaus-playlist-tracks playlist)) do
-               (let* ((track (elt (soundklaus-playlist-tracks playlist) (- n 1)))
-                      (url (soundklaus-track-stream-url track))
-                      (filename (soundklaus-playlist-track-download-filename playlist track n)))
-                 (insert (format "curl -L '%s' -o %s"
-                                 url (shell-quote-argument filename)))
-                 (newline)
-                 (insert (format "mp3info -d %s" (shell-quote-argument filename)))
-                 (newline)
-                 (insert (format "mp3info -n %s -t %s %s"
-                                 n (shell-quote-argument (soundklaus-track-title track))
-                                 (shell-quote-argument filename)))
-                 (newline)))
-      (buffer-string))))
+    (let ((process (start-process "SoundCloud Download" buffer "curl" "-L" url "-o" filename)))
+      (set-process-sentinel
+       process
+       (lambda (process event)
+	 (cond
+	  ((string= "exit" (process-status process))
+	   (let ((buffer (get-buffer buffer)))
+	     (if buffer (kill-buffer buffer)))
+	   (soundklaus-tag-track media)
+	   (message "Download of %s complete." (soundklaus-track-title media))))))
+      (message "Downloading %s ..." (soundklaus-track-title media))
+      process)))
 
 (defmethod soundklaus-download ((playlist soundklaus-playlist))
-  (let* ((id (soundklaus-playlist-id playlist))
-	 (buffer (format "*soundklaus-download-%s*" id))
-	 (filename (make-temp-file (format "soundklaus-download-playlist-%s" id))))
-    (message "%s" filename)
-    (with-temp-buffer
-      (insert (soundklaus-download-playlist-script playlist))
-      (write-region (point-min) (point-max) filename))
-    (set-process-sentinel
-     (start-process "SoundCloud Download" buffer "bash" filename)
-     (lambda (process event)
-       (cond
-	((string= "exit" (process-status process))
-	 (let ((buffer (get-buffer buffer)))
-	   (if buffer (kill-buffer buffer)))
-	 ;; (delete-file filename)
-	 (message "Download of %s complete." (soundklaus-playlist-title playlist))))))
-    (message "Downloading %s ..." (soundklaus-playlist-title playlist))))
+  (dolist (track (soundklaus-playlist-tracks playlist))
+    (soundklaus-download track)))
 
 (defmethod soundklaus-play ((track soundklaus-track))
   (emms-play-soundklaus-track track))
