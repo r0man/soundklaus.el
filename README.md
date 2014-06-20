@@ -10,7 +10,7 @@ This mode requires [Emacs](http://www.gnu.org/software/emacs/) 24. Other require
 
 ## Installation
 
-*soundklaus.el* is available on [MELPA](http://melpa.milkbox.net). Instructions on how to configure *MELPA* can be found [here](http://melpa.milkbox.net/#/getting-started). You can install `soundklaus.el` with the following command:
+*soundklaus.el* is available on [MELPA](http://melpa.milkbox.net). Instructions on how to configure *MELPA* can be found [here](http://melpa.milkbox.net/#/getting-started). After configuring *MELPA* you can install *soundklaus.el* with the following command:
 
 `M-x package-install [RET] soundklaus [RET]`
 
