@@ -161,18 +161,16 @@ evaluate BODY."
 
 (defun soundklaus-define-slot (name attribute)
   "Return the s-expression to define a resource slot.
-Argument NAME is the name of the class.
-Argument ATTRIBUTE is the name of the slot."
+NAME is the name of the slot and ATTRIBUTE the slot options."
   `(,(car attribute)
     :initarg ,(intern (format ":%s" (car attribute)))
     :accessor ,(intern (format "soundklaus-%s-%s" name (car attribute)))
     :documentation ,(cadr attribute)))
 
 (defun soundklaus-define-class (name doc slots)
-  "Return the s-expression to define a resource class.
-Argument NAME is the resource name.
-Argument NAME is documentation string of the class.
-Argument SLOTS is a list of attributes."
+  "Return the s-expression to define a resource class with the name NAME.
+DOC is the documentation string of the class and SLOTS a list of
+resource attributes."
   (let ((class (intern (format "soundklaus-%s" name))))
     `(defclass ,class ()
        ,(mapcar (lambda (slot)
