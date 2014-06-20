@@ -145,8 +145,9 @@
   (concat soundklaus-api-root (soundklaus-path resource)))
 
 (defmacro soundklaus-with-access-token (&rest body)
-  "Ensure that `soundklaus-access-token` is not blank, and raise
-  an error otherwise."
+  "Ensure that the `soundklaus-access-token` is not nil.
+If `soundklaus-access-token` is not set raise an error, otherwise
+evaluate BODY."
   `(if (s-blank? soundklaus-access-token)
        (message "Not authenticated with SoundCloud. Try M-x soundklaus-connect.")
      (progn ,@body)))
@@ -652,8 +653,9 @@ association list or hash table only the keys will be underscored."
     (json-read)))
 
 (defun soundklaus-request (method path params)
-  "Send an HTTP `method` request to the SoundCloud API endpoint
-at `path`, parse the response as JSON and call `callback`."
+  "Send an HTTP METHOD request to the SoundCloud API endpoint at
+PATH with the query parameters PARAMS, parse the response as JSON
+and call `callback`."
   (let ((url-request-extra-headers '(("Accept" . "application/json"))))
     (deferred:url-retrieve
       (concat soundklaus-api-root path "?"
