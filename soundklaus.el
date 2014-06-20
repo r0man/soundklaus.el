@@ -193,8 +193,8 @@ resource attributes."
 		     (s-match ":" segment))
 		   segments))))
 
-(defun soundklaus-replace-slots (pattern slots &rest args)
-  "Replace the SLOTS in PATTERN with their values."
+(defun soundklaus-replace-slots (pattern slots &rest values)
+  "Interpolate PATTERN and replace each name in SLOTS with its VALUES."
   (-reduce-from
    (lambda (url x)
      (s-replace (car x) (cdr x) url))
@@ -206,26 +206,29 @@ resource attributes."
 		    (cons (format ":%s" slot)
 			  (format "%s" (slot-value instance slot))))
 		  slots)))
-    slots args)))
+    slots values)))
 
 (defun soundklaus-intern (name &rest args)
-  "Intern NAME in the soundklaus namespace as a symbol."
+  "Intern NAME in the soundklaus namespace as a symbol.
+ARGS is a list of strings appended to NAME."
   (unless (s-blank? name)
     (intern (apply 'format (format "soundklaus-%s" name) args))))
 
 (defun soundklaus-define-path (name pattern)
-  "Returns the s-expression to define a resource path method.
-Argument NAME is the name of the resource."
+  "Return the s-expression to define a path method of a resource.
+NAME is the name of the resource and PATTERN is used to
+interpolate the arguments passed to the generated method."
   (let ((slots (soundklaus-path-symbols pattern))
 	(resource (cl-gensym "resource-")))
     `(defmethod ,(soundklaus-intern "path") ((,resource ,(soundklaus-intern name)))
        (soundklaus-replace-slots ,pattern ',slots ,resource))))
 
-(defmacro define-soundklaus-resource (name pattern doc attributes)
-  "Define a SoundCloud resource.
-Argument NAME is the name of the resource."
+(defmacro define-soundklaus-resource (name pattern doc slots)
+  "Define a SoundCloud resource with the name NAME.
+PATTERN is is used to build the path to the resource, DOC is the
+documentation string, and SLOTS the attributes of the resource."
   `(progn
-     ,(soundklaus-define-class name doc attributes)
+     ,(soundklaus-define-class name doc slots)
      ,(soundklaus-define-path name pattern)))
 
 ;; USER: https://developers.soundcloud.com/docs/api/reference#users
@@ -345,8 +348,9 @@ Argument NAME is the name of the resource."
       instance)))
 
 (defun soundklaus-url-encode (params)
-  "Return a string that is PARAMS URI-encoded. PARAMS can be a
-number, string, symbol or an association list."
+  "Return a URL encoded string of the PARAMS.
+PARAMS can be a number, string, symbol or an association list and
+the elements are joined with the ampersand character."
   (cond
    ((stringp params)
     (url-hexify-string params))
@@ -390,7 +394,8 @@ number, string, symbol or an association list."
   	   (soundklaus-safe-path (soundklaus-playlist-title playlist)))))
 
 (defun soundklaus-playlist-track-download-filename (playlist track n)
-  "Returns the download filename of the TRACK number N in PLAYLIST."
+  "Return the download filename of a song in the PLAYLIST.
+TRACK is song number N."
   (expand-file-name
    (concat (file-name-as-directory (soundklaus-playlist-download-directory playlist))
 	   (format "%02d-%s.mp3" n (soundklaus-safe-path (soundklaus-track-title track))))))
@@ -401,9 +406,7 @@ number, string, symbol or an association list."
 	  (soundklaus-track-username track)))
 
 (defun soundklaus-track-stream-url (track)
-  "Returns the download url of TRACK with
-`soundklaus-client-id` and `soundklaus-access-token` as query
-parameters."
+  "Return the stream URL of TRACK."
   (concat (slot-value track 'stream-url) "?"
 	  (soundklaus-url-encode
 	   (soundklaus-remove-nil-values
@@ -423,9 +426,10 @@ parameters."
   (soundklaus-format-duration (soundklaus-playlist-duration playlist)))
 
 (defun soundklaus-transform (arg transform-fn)
-  "Transform ARG with TRANSFORM-FN. ARG can be an assoc list,
-hash table, string or a symbol. If ARG is an assoc list or hash
-table only the keys will be transformed."
+  "Transform ARG with the transformation function TRANSFORM-FN.
+ARG can be an assoc list, hash table, string or a symbol.  If ARG
+is an assoc list or hash table only the keys will be
+transformed."
   (cond
    ((and (listp arg) (listp (car arg)))
     (mapcar (lambda (c) (cons (soundklaus-transform (car c) transform-fn) (cdr c))) arg))
@@ -442,15 +446,17 @@ table only the keys will be transformed."
     (intern (soundklaus-transform (symbol-name arg) transform-fn)))))
 
 (defun soundklaus-dasherize (arg)
-  "Replace each underscore in ARG with a dash. ARG can be an
-association list, hash table, string or a symbol. If ARG is an
-association list or hash table only the keys will be dasherized."
+  "Replace each underscore in ARG with a dash.
+ARG can be an association list, hash table, string or a
+symbol.  If ARG is an association list or hash table only the keys
+will be dasherized."
   (soundklaus-transform arg (lambda (string) (replace-regexp-in-string "_" "-" string))))
 
 (defun soundklaus-underscore (arg)
-  "Replace each underscore in ARG with a dash. ARG can be an
-association list, hash table, string or a symbol. If ARG is an
-association list or hash table only the keys will be underscored."
+  "Replace each dash in ARG with an underscore.
+ARG can be an association list, hash table, string or a
+symbol.  If ARG is an association list or hash table only the keys
+will be underscored."
   (soundklaus-transform arg (lambda (string) (replace-regexp-in-string "-" "_" string))))
 
 (defun soundklaus-playlist-username (playlist)
@@ -651,9 +657,10 @@ association list or hash table only the keys will be underscored."
     (json-read)))
 
 (defun soundklaus-request (method path params)
-  "Send an HTTP METHOD request to the SoundCloud API endpoint at
-PATH with the query parameters PARAMS, parse the response as JSON
-and call `callback`."
+  "Send an deferred HTTP request to the SoundCloud API.
+METHOD is the HTTP method used in the request, PATH the path
+component of the SoundCloud URL and PARAMS the query parameters
+of the request."
   (let ((url-request-extra-headers '(("Accept" . "application/json"))))
     (deferred:url-retrieve
       (concat soundklaus-api-root path "?"
