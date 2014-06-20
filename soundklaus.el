@@ -872,5 +872,6 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   :group 'soundklaus-mode)
 
 (provide 'soundklaus)
+(run-hooks 'soundklaus-load-hook)
 
 ;;; soundklaus.el ends here
