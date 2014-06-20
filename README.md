@@ -6,7 +6,7 @@ Play [SoundCloud](https://soundcloud.com) music in [Emacs](http://www.gnu.org/so
 
 ## Prerequisites
 
-This mode requires [Emacs](http://www.gnu.org/software/emacs/) 24. Other required dependencies are [curl](http://curl.haxx.se) to stream tracks, [mp3info](http://ibiblio.org/mp3info) to tag them, and a music player that is supported by *EMMS*. [Music Player Daemon](http://www.musicpd.org) is known to work out of the box, [VLC Media Player](http://www.videolan.org) after tweaking. [mplayer](http://www.mplayerhq.hu/design7/news.html) is not supported at the moment.
+This mode requires [Emacs](http://www.gnu.org/software/emacs/) 24. Other required dependencies are [curl](http://curl.haxx.se) to stream tracks, [mp3info](http://ibiblio.org/mp3info) to tag them, and a music player that is supported by *EMMS*. [Music Player Daemon](http://www.musicpd.org) is known to work out of the box, [VLC Media Player](http://www.videolan.org) after tweaking.
 
 ## Installation
 
