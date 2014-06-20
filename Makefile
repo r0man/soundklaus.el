@@ -1,6 +1,6 @@
+CASK = cask
 EMACS = emacs
 EMACSFLAGS = -L .
-CASK = cask
 
 all: package
 
