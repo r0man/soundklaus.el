@@ -59,7 +59,8 @@ You can search songs with `M-x soundklaus-tracks` and playlists with `M-x soundk
 
 ## Authentication
 
-Some commands like `M-x soundklaus-activities` or `M-x soundklaus-my-tracks` need access to your *SoundCloud* account. Your web browser should open Emacs via `emacsclient` for the [OAuth2](http://oauth.net/2) callback URL  `soundklaus://oauth/callback`. On a Linux system you can configure this by adding the following content to the  `~/.local/share/applications/soundklaus.desktop` file in your home directory, or run `M-x soundklaus-install-desktop-entry` to let Emacs do it for you.
+Some commands like `M-x soundklaus-activities` or `M-x soundklaus-my-tracks` need access to your *SoundCloud* account. Your web browser should open Emacs via `emacsclient` for the [OAuth2](http://oauth.net/2) callback URL `soundklaus://oauth/callback`. On a Linux system you can configure this by running `M-x soundklaus-install-desktop-entry`. This will write the following content to the `~/.local/share/applications/soundklaus.desktop` file in your home directory.
+
 
 ```
 [Desktop Entry]
