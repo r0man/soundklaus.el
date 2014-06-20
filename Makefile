@@ -1,30 +1,32 @@
+EMACS = emacs
+EMACSFLAGS = -L .
+CASK = cask
 
 all: package
 
 .PHONY: clean test
 
 .cask:
-	@cask install
+	$(CASK) install
+
+checkdoc:
+	$(CASK) exec $(EMACS) --batch --eval="(checkdoc)" -Q soundklaus.el
 
 clean:
 	@rm -rf dist
-	@cask clean-elc
-
+	$(CASK) clean-elc
 
 compile: .cask
-	@cask exec emacs --batch --eval="(batch-byte-compile)" -Q soundklaus.el
-
-checkdoc:
-	@cask exec emacs --batch --eval="(checkdoc)" -Q  soundklaus.el
-
-lint: .cask
-	@cask exec emacs soundklaus.el --batch --eval="(elint-current-buffer)" -q
+	$(CASK) exec $(EMACS) --batch --eval="(batch-byte-compile)" -Q soundklaus.el
 
 distclean: clean
 	@rm -rf .cask
 
+lint: .cask
+	$(CASK) exec $(EMACS) soundklaus.el --batch --eval="(elint-current-buffer)" -q
+
 package: test checkdoc
-	@cask package
+	$(CASK) package
 
 test: .cask
-	@cask exec ert-runner
+	$(CASK) exec ert-runner
