@@ -55,7 +55,7 @@ The default configuration of the [VLC Media Player](http://www.videolan.org) tha
 
 ## Usage
 
-You can search songs with `M-x soundklaus-tracks` and playlists with `M-x soundklaus-playlists`. Your own tracks and playlists are available with `M-x soundklaus-my-tracks` and `M-x soundklaus-my-playlists`. In the `*soundklaus*` buffer you can move to the next song with `C-n` or `n`, and to the previous one with `C-p` or `p`. Pressing `RET` plays the current song, and `a` adds the current song at point to the *EMMS* playlist.
+You can search songs with `M-x soundklaus-tracks` and playlists with `M-x soundklaus-playlists`. Your own tracks and playlists are available with `M-x soundklaus-my-tracks` and `M-x soundklaus-my-playlists`. In the `*soundklaus*` buffer you can move to the next song with `C-n` or `n`, and to the previous one with `C-p` or `p`. Pressing `RET` plays the current song, and `a` adds the current song at point to the *EMMS* playlist. All other key bindings are viewable with `M-x describe-minor-mode [RET] soundklaus-mode`.
 
 ## Authentication
 
