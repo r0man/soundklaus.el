@@ -48,6 +48,11 @@ The default configuration of the [VLC Media Player](http://www.videolan.org) tha
   "vlc" "--intf=rc")
 ```
 
+### MPlayer
+
+[MPlayer](http://www.mplayerhq.hu) can't follow redirect links when playing streams. This is currently required by *soundklaus.el*, so *MPlayer* is not supported at the moment.
+
+
 ## Usage
 
 You can search songs with `M-x soundklaus-tracks` and playlists with `M-x soundklaus-playlists`. In the `*soundklaus*` buffer you can move to the next song with `C-n` or `n`, and to the previous one with `C-p` or `p`. Pressing `RET` plays the current song, and `a` adds the current song at point to the *EMMS* playlist.
