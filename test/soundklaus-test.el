@@ -24,6 +24,22 @@
   (should (equal "https://api.soundcloud.com/me/activities"
 		 (soundklaus-activities-url))))
 
+(ert-deftest soundklaus-make-request-test ()
+  (let ((request (soundklaus-make-request :get "http://api.soundcloud.com/tracks")))
+    (should (equal :get (soundklaus-request-method request)))
+    (should (equal "http://api.soundcloud.com/tracks"
+		   (soundklaus-request-url request)))
+    (should (equal '(("Accept" . "application/json"))
+		   (soundklaus-request-headers request)))
+    (should (equal `(("client_id" . ,soundklaus-client-id)
+		     ("oauth_token" . ,soundklaus-access-token))
+		   (soundklaus-request-query-params request)))))
+
+(ert-deftest soundklaus-request-expand-url ()
+  (let ((request (soundklaus-make-request :get "http://api.soundcloud.com/tracks")))
+    (should (equal "http://api.soundcloud.com/tracks?client_id=988875d70be466a2dd1bfab120c0a306"
+		   (soundklaus-request-expand-url request)))))
+
 (ert-deftest soundklaus-my-tracks-url-test ()
   (should (equal "https://api.soundcloud.com/me/tracks"
 		 (soundklaus-my-tracks-url))))

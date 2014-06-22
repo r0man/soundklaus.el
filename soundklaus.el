@@ -333,6 +333,44 @@ documentation string, and SLOTS the attributes of the resource."
 			       (cdr (assoc 'collection assoc-list)))))
       collection)))
 
+;; HTTP request
+
+(defclass soundklaus-request ()
+  ((headers
+    :initarg :headers
+    :accessor soundklaus-request-headers
+    :documentation "The HTTP headers of the request.")
+   (method
+    :initarg :method
+    :accessor soundklaus-request-method
+    :documentation "The HTTP method of the request.")
+   (url
+    :initarg :url
+    :accessor soundklaus-request-url
+    :documentation "The HTTP URL of the request.")
+   (query-params
+    :initarg :query-params
+    :accessor soundklaus-request-query-params
+    :documentation "The query parameters of the HTTP request."))
+  "A class representing a HTTP request.")
+
+;; HTTP response
+
+(defclass soundklaus-response ()
+  ((status
+    :initarg :status
+    :accessor soundklaus-response-status
+    :documentation "The HTTP status code of the response.")
+   (body
+    :initarg :body
+    :accessor soundklaus-response-body
+    :documentation "The HTTP body of the response.")
+   (request
+    :initarg :request
+    :accessor soundklaus-response-request
+    :documentation "The HTTP request of the response."))
+  "A class representing a HTTP response")
+
 ;; EMMS Sources
 
 (define-emms-source soundklaus-track (track)
@@ -641,19 +679,34 @@ will be underscored."
     (re-search-forward "^$" nil 'move)
     (json-read)))
 
-(defun soundklaus-request (method url params)
+(cl-defun soundklaus-make-request (method url &key headers query-params)
+  "Return a HTTP request of METHOD to URL with query parameters QUERY-PARAMS."
+  (make-instance 'soundklaus-request
+		 :headers (append headers '(("Accept" . "application/json")))
+		 :method method
+		 :url url
+		 :query-params
+		 (append query-params
+			 `(("client_id" . ,soundklaus-client-id)
+			   ("oauth_token" . ,soundklaus-access-token)))))
+
+(defun soundklaus-request-expand-url (request)
+  "Return the expanded URL of REQUEST including the query parameters"
+  (let ((params (soundklaus-request-query-params request)))
+    (concat (soundklaus-request-url request) "?"
+	    (soundklaus-url-encode (soundklaus-remove-nil-values params)))))
+
+(defun soundklaus-send-request (method url params)
   "Send an deferred HTTP request to the SoundCloud API.
 METHOD is the HTTP method used in the request, URL the SoundCloud
 URL and PARAMS the query parameters of the request."
   (let ((nd (deferred:new))
-	(url-request-extra-headers '(("Accept" . "application/json"))))
+	(request (soundklaus-make-request method url :query-params params)))
     (deferred:$
-      (deferred:url-retrieve
-	(concat url "?"
-		(soundklaus-url-encode
-		 (soundklaus-remove-nil-values
-		  (append params `(("client_id" . ,soundklaus-client-id)
-				   ("oauth_token" . ,soundklaus-access-token)))))))
+      (let ((url-request-method (soundklaus-request-method request))
+	    (url-request-extra-headers (soundklaus-request-headers request)))
+	(deferred:url-retrieve
+	  (soundklaus-request-expand-url request)))
       (deferred:nextc it
 	(lambda (buffer)
 	  (deferred:post-task nd 'ok (soundklaus-parse-response buffer)))))
@@ -773,8 +826,8 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (interactive)
   (soundklaus-with-access-token
    (deferred:$
-     (soundklaus-request
-      :get (soundklaus-activities-url)
+     (soundklaus-send-request
+      "GET" (soundklaus-activities-url)
       `(("limit" . ,(number-to-string soundklaus-activity-limit))))
      (deferred:nextc it
        (lambda (data)
@@ -785,8 +838,8 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   "List all tracks on SoundCloud matching QUERY."
   (interactive "MQuery: ")
   (deferred:$
-    (soundklaus-request
-     :get (soundklaus-tracks-url)
+    (soundklaus-send-request
+     "GET" (soundklaus-tracks-url)
      `(("limit" . ,(number-to-string soundklaus-track-limit))
        ("q" . ,query)))
     (deferred:nextc it
@@ -798,8 +851,8 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   "List all playlists on SoundCloud matching QUERY."
   (interactive "MQuery: ")
   (deferred:$
-    (soundklaus-request
-     :get (soundklaus-playlists-url)
+    (soundklaus-send-request
+     "GET" (soundklaus-playlists-url)
      `(("limit" . ,(number-to-string soundklaus-playlist-limit))
        ("q" . ,query)))
     (deferred:nextc it
@@ -812,8 +865,8 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (interactive)
   (soundklaus-with-access-token
    (deferred:$
-     (soundklaus-request
-      :get (soundklaus-my-playlists-url)
+     (soundklaus-send-request
+      "GET" (soundklaus-my-playlists-url)
       `(("limit" . ,(number-to-string soundklaus-playlist-limit))))
      (deferred:nextc it
        (lambda (data)
@@ -825,8 +878,8 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (interactive)
   (soundklaus-with-access-token
    (deferred:$
-     (soundklaus-request
-      :get (soundklaus-my-tracks-url)
+     (soundklaus-send-request
+      "GET" (soundklaus-my-tracks-url)
       `(("limit" . ,(number-to-string soundklaus-track-limit))))
      (deferred:nextc it
        (lambda (data)
