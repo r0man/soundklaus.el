@@ -637,8 +637,7 @@ of the request."
 				   ("oauth_token" . ,soundklaus-access-token)))))))
       (deferred:nextc it
 	(lambda (buffer)
-	  (let ((data (soundklaus-parse-response buffer)))
-	    (deferred:post-task nd 'ok data)))))
+	  (deferred:post-task nd 'ok (soundklaus-parse-response buffer)))))
     nd))
 
 (defun soundklaus-slurp-instance (class assoc-list)
