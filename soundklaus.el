@@ -789,7 +789,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
 (defmethod soundklaus-render ((collection soundklaus-collection))
   (mapcar 'soundklaus-render (soundklaus-collection-content collection)))
 
-(defmacro soundklaus-with-widget (&rest body)
+(defmacro soundklaus-with-widget (title &rest body)
   "Evaluate BODY with in the context of the SoundCloud widget buffer."
   `(progn
      (set-buffer (get-buffer-create soundklaus-buffer))
@@ -798,6 +798,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
      (let ((inhibit-read-only t))
        (erase-buffer)
        (remove-overlays)
+       (widget-insert (format "\n  >> %s\n\n" ,title))
        ,@body)
      (use-local-map widget-keymap)
      (widget-setup)
@@ -805,24 +806,6 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
      (widget-minor-mode)
      (goto-char 0)
      (soundklaus-next-media)))
-
-(defun soundklaus-render-activities (collection)
-  "Render SoundCloud COLLECTION as an Emacs widget."
-  (soundklaus-with-widget
-   (widget-insert "\n  >> ACTIVITIES\n\n")
-   (soundklaus-render collection)))
-
-(defun soundklaus-render-tracks (tracks)
-  "Render SoundCloud TRACKS as an Emacs widget."
-  (soundklaus-with-widget
-   (widget-insert "\n  >> TRACKS\n\n")
-   (mapc 'soundklaus-render tracks)))
-
-(defun soundklaus-render-playlists (playlists)
-  "Render SoundCloud PLAYLISTS as an Emacs widget."
-  (soundklaus-with-widget
-   (widget-insert "\n  >> PLAYLISTS\n\n")
-   (mapc 'soundklaus-render playlists)))
 
 ;;;###autoload
 (defun soundklaus-activities ()
@@ -835,8 +818,11 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
       `(("limit" . ,(number-to-string soundklaus-activity-limit))))
      (deferred:nextc it
        (lambda (response)
-	 (let ((body (soundklaus-response-body response)))
-	   (soundklaus-render-activities (soundklaus-make-collection body))))))))
+	 (let* ((body (soundklaus-response-body response))
+		(activities (soundklaus-make-collection body)))
+	   (soundklaus-with-widget
+	    "ACTIVITIES"
+	    (soundklaus-render activities))))))))
 
 ;;;###autoload
 (defun soundklaus-tracks (query)
@@ -849,8 +835,11 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
        ("q" . ,query)))
     (deferred:nextc it
       (lambda (response)
-	(let ((body (soundklaus-response-body response)))
-	  (soundklaus-render-tracks (mapcar 'soundklaus-make-track body)))))))
+	(let* ((body (soundklaus-response-body response))
+	       (tracks (mapcar 'soundklaus-make-track body)))
+	  (soundklaus-with-widget
+	   "TRACKS"
+	   (mapc 'soundklaus-render tracks)))))))
 
 ;;;###autoload
 (defun soundklaus-playlists (query)
@@ -863,8 +852,11 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
        ("q" . ,query)))
     (deferred:nextc it
       (lambda (response)
-	(let ((body (soundklaus-response-body response)))
-	  (soundklaus-render-playlists (mapcar 'soundklaus-make-playlist body)))))))
+	(let* ((body (soundklaus-response-body response))
+	       (playlists (mapcar 'soundklaus-make-playlist body)))
+	  (soundklaus-with-widget
+	   "PLAYLISTS"
+	   (mapc 'soundklaus-render playlists)))))))
 
 ;;;###autoload
 (defun soundklaus-my-playlists ()
@@ -877,8 +869,11 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
       `(("limit" . ,(number-to-string soundklaus-playlist-limit))))
      (deferred:nextc it
        (lambda (response)
-	 (let ((body (soundklaus-response-body response)))
-	   (soundklaus-render-playlists (mapcar 'soundklaus-make-playlist body))))))))
+	 (let* ((body (soundklaus-response-body response))
+		(playlists (mapcar 'soundklaus-make-playlist body)))
+	   (soundklaus-with-widget
+	    "MY PLAYLISTS"
+	    (mapc 'soundklaus-render playlists))))))))
 
 ;;;###autoload
 (defun soundklaus-my-tracks ()
@@ -891,8 +886,11 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
       `(("limit" . ,(number-to-string soundklaus-track-limit))))
      (deferred:nextc it
        (lambda (response)
-	 (let ((body (soundklaus-response-body response)))
-	   (soundklaus-render-tracks (mapcar 'soundklaus-make-track body))))))))
+	 (let* ((body (soundklaus-response-body response))
+		(tracks (mapcar 'soundklaus-make-track body)))
+	   (soundklaus-with-widget
+	    "MY TRACKS"
+	    (mapc 'soundklaus-render tracks))))))))
 
 ;;;###autoload
 (defun soundklaus-desktop-entry-save ()
