@@ -813,7 +813,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
 
 ;;;###autoload
 (defun soundklaus-install-desktop-entry ()
-  "Install the desktop entry of theX Window System."
+  "Install the SoundKlaus desktop entry for the X Window System."
   (interactive)
   (let ((dir (file-name-directory soundklaus-desktop-entry)))
     (unless (file-exists-p dir)
