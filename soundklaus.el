@@ -696,7 +696,7 @@ will be underscored."
     (concat (soundklaus-request-url request) "?"
 	    (soundklaus-url-encode (soundklaus-remove-nil-values params)))))
 
-(defun soundklaus-send-request (method url params)
+(defun soundklaus-request-send (method url params)
   "Send an deferred HTTP request to the SoundCloud API.
 METHOD is the HTTP method used in the request, URL the SoundCloud
 URL and PARAMS the query parameters of the request."
@@ -830,7 +830,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (interactive)
   (soundklaus-with-access-token
    (deferred:$
-     (soundklaus-send-request
+     (soundklaus-request-send
       "GET" (soundklaus-activities-url)
       `(("limit" . ,(number-to-string soundklaus-activity-limit))))
      (deferred:nextc it
@@ -843,7 +843,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   "List all tracks on SoundCloud matching QUERY."
   (interactive "MQuery: ")
   (deferred:$
-    (soundklaus-send-request
+    (soundklaus-request-send
      "GET" (soundklaus-tracks-url)
      `(("limit" . ,(number-to-string soundklaus-track-limit))
        ("q" . ,query)))
@@ -857,7 +857,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   "List all playlists on SoundCloud matching QUERY."
   (interactive "MQuery: ")
   (deferred:$
-    (soundklaus-send-request
+    (soundklaus-request-send
      "GET" (soundklaus-playlists-url)
      `(("limit" . ,(number-to-string soundklaus-playlist-limit))
        ("q" . ,query)))
@@ -872,7 +872,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (interactive)
   (soundklaus-with-access-token
    (deferred:$
-     (soundklaus-send-request
+     (soundklaus-request-send
       "GET" (soundklaus-my-playlists-url)
       `(("limit" . ,(number-to-string soundklaus-playlist-limit))))
      (deferred:nextc it
@@ -886,7 +886,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (interactive)
   (soundklaus-with-access-token
    (deferred:$
-     (soundklaus-send-request
+     (soundklaus-request-send
       "GET" (soundklaus-my-tracks-url)
       `(("limit" . ,(number-to-string soundklaus-track-limit))))
      (deferred:nextc it
