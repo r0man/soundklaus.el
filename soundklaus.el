@@ -703,13 +703,17 @@ URL and PARAMS the query parameters of the request."
   (let ((nd (deferred:new))
 	(request (soundklaus-make-request method url :query-params params)))
     (deferred:$
-      (let ((url-request-method (soundklaus-request-method request))
-	    (url-request-extra-headers (soundklaus-request-headers request)))
+      (let ((url-request-extra-headers (soundklaus-request-headers request))
+	    (url-request-method (soundklaus-request-method request)))
 	(deferred:url-retrieve
 	  (soundklaus-request-expand-url request)))
       (deferred:nextc it
 	(lambda (buffer)
-	  (deferred:post-task nd 'ok (soundklaus-parse-response buffer)))))
+	  (deferred:post-task nd 'ok
+	    (make-instance
+	     'soundklaus-response
+	     :body (soundklaus-parse-response buffer)
+	     :request request)))))
     nd))
 
 (defun soundklaus-slurp-instance (class assoc-list)
@@ -830,8 +834,9 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
       "GET" (soundklaus-activities-url)
       `(("limit" . ,(number-to-string soundklaus-activity-limit))))
      (deferred:nextc it
-       (lambda (data)
-	 (soundklaus-render-activities (soundklaus-make-collection data)))))))
+       (lambda (response)
+	 (let ((body (soundklaus-response-body response)))
+	   (soundklaus-render-activities (soundklaus-make-collection body))))))))
 
 ;;;###autoload
 (defun soundklaus-tracks (query)
@@ -843,8 +848,9 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
      `(("limit" . ,(number-to-string soundklaus-track-limit))
        ("q" . ,query)))
     (deferred:nextc it
-      (lambda (data)
-	(soundklaus-render-tracks (mapcar 'soundklaus-make-track data))))))
+      (lambda (response)
+	(let ((body (soundklaus-response-body response)))
+	  (soundklaus-render-tracks (mapcar 'soundklaus-make-track body)))))))
 
 ;;;###autoload
 (defun soundklaus-playlists (query)
@@ -856,8 +862,9 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
      `(("limit" . ,(number-to-string soundklaus-playlist-limit))
        ("q" . ,query)))
     (deferred:nextc it
-      (lambda (data)
-	(soundklaus-render-playlists (mapcar 'soundklaus-make-playlist data))))))
+      (lambda (response)
+	(let ((body (soundklaus-response-body response)))
+	  (soundklaus-render-playlists (mapcar 'soundklaus-make-playlist body)))))))
 
 ;;;###autoload
 (defun soundklaus-my-playlists ()
@@ -869,8 +876,9 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
       "GET" (soundklaus-my-playlists-url)
       `(("limit" . ,(number-to-string soundklaus-playlist-limit))))
      (deferred:nextc it
-       (lambda (data)
-	 (soundklaus-render-playlists (mapcar 'soundklaus-make-playlist data)))))))
+       (lambda (response)
+	 (let ((body (soundklaus-response-body response)))
+	   (soundklaus-render-playlists (mapcar 'soundklaus-make-playlist body))))))))
 
 ;;;###autoload
 (defun soundklaus-my-tracks ()
@@ -882,8 +890,9 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
       "GET" (soundklaus-my-tracks-url)
       `(("limit" . ,(number-to-string soundklaus-track-limit))))
      (deferred:nextc it
-       (lambda (data)
-	 (soundklaus-render-tracks (mapcar 'soundklaus-make-track data)))))))
+       (lambda (response)
+	 (let ((body (soundklaus-response-body response)))
+	   (soundklaus-render-tracks (mapcar 'soundklaus-make-track body))))))))
 
 ;;;###autoload
 (defun soundklaus-install-desktop-entry ()
