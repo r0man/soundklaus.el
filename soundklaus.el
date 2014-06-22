@@ -642,7 +642,7 @@ of the request."
 	    (let* ((key (soundklaus-underscore slot))
 		   (value (cdr (assoc key assoc-list))))
 	      (set-slot-value instance slot value)))
-	  (aref (class-v class) class-public-a))
+	  (object-slots instance))
     instance))
 
 (defun soundklaus-format-duration (duration-in-ms)
