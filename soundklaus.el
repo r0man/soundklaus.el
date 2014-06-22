@@ -771,13 +771,14 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
 (defun soundklaus-activities ()
   "List activities on SoundCloud."
   (interactive)
-  (deferred:$
-    (soundklaus-request
-     :get (soundklaus-activities-url)
-     `(("limit" . ,(number-to-string soundklaus-activity-limit))))
-    (deferred:nextc it
-      (lambda (data)
-	(soundklaus-render-activities (soundklaus-make-collection data))))))
+  (soundklaus-with-access-token
+   (deferred:$
+     (soundklaus-request
+      :get (soundklaus-activities-url)
+      `(("limit" . ,(number-to-string soundklaus-activity-limit))))
+     (deferred:nextc it
+       (lambda (data)
+	 (soundklaus-render-activities (soundklaus-make-collection data)))))))
 
 ;;;###autoload
 (defun soundklaus-tracks (query)
