@@ -696,12 +696,11 @@ will be underscored."
     (concat (soundklaus-request-url request) "?"
 	    (soundklaus-url-encode (soundklaus-remove-nil-values params)))))
 
-(defun soundklaus-request-send (method url params)
+(defun soundklaus-request-send (request)
   "Send an deferred HTTP request to the SoundCloud API.
 METHOD is the HTTP method used in the request, URL the SoundCloud
 URL and PARAMS the query parameters of the request."
-  (let ((nd (deferred:new))
-	(request (soundklaus-make-request method url :query-params params)))
+  (let ((nd (deferred:new)))
     (deferred:$
       (let ((url-request-extra-headers (soundklaus-request-headers request))
 	    (url-request-method (soundklaus-request-method request)))
@@ -829,6 +828,20 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   "Return the HTTP request to return the next page of a response."
   (soundklaus-next-request (soundklaus-response-request response)))
 
+(defun soundklaus-pre-command-hook ()
+  (let ((percent (/ (* 100 (point)) (point-max))))
+    (when (> percent 80)
+      (let* ((pos (next-single-property-change 1 :soundklaus-next))
+	     (next (get-text-property pos :soundklaus-next))
+	     (make (get-text-property pos :soundklaus-make)))
+	(let (pos (point))
+	  (goto-char (point-max))
+	  (widget-insert "  Loading more ..."))))))
+
+(defun soundklaus-setup-pagination ()
+  "Setup hooks for pagination."
+  (add-hook 'pre-command-hook 'soundklaus-pre-command-hook t))
+
 ;;;###autoload
 (defun soundklaus-activities ()
   "List activities on SoundCloud."
@@ -852,16 +865,21 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (interactive "MQuery: ")
   (deferred:$
     (soundklaus-request-send
-     "GET" (soundklaus-tracks-url)
-     `(("limit" . ,soundklaus-track-limit)
-       ("q" . ,query)))
+     (soundklaus-make-request
+      "GET" (soundklaus-tracks-url)
+      :query-params
+      `(("limit" . ,soundklaus-track-limit)
+	("q" . ,query))))
     (deferred:nextc it
       (lambda (response)
 	(let* ((body (soundklaus-response-body response))
 	       (tracks (mapcar 'soundklaus-make-track body)))
 	  (soundklaus-with-widget
-	   (propertize "TRACKS" :soundklaus-next (soundklaus-next-response response))
-	   (mapc 'soundklaus-render tracks)))))))
+	   (propertize "TRACKS"
+		       :soundklaus-next (soundklaus-next-response response)
+		       :soundklaus-make 'soundklaus-make-track)
+	   (mapc 'soundklaus-render tracks))
+	  (soundklaus-setup-pagination))))))
 
 ;;;###autoload
 (defun soundklaus-playlists (query)
@@ -869,9 +887,11 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (interactive "MQuery: ")
   (deferred:$
     (soundklaus-request-send
-     "GET" (soundklaus-playlists-url)
-     `(("limit" . ,soundklaus-playlist-limit)
-       ("q" . ,query)))
+     (soundklaus-make-request
+      "GET" (soundklaus-playlists-url)
+      :query-params
+      `(("limit" . ,soundklaus-playlist-limit)
+	("q" . ,query))))
     (deferred:nextc it
       (lambda (response)
 	(let* ((body (soundklaus-response-body response))
@@ -887,8 +907,9 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (soundklaus-with-access-token
    (deferred:$
      (soundklaus-request-send
-      "GET" (soundklaus-my-playlists-url)
-      `(("limit" . ,soundklaus-playlist-limit)))
+      (soundklaus-make-request
+       "GET" (soundklaus-my-playlists-url)
+       :query-params `(("limit" . ,soundklaus-playlist-limit))))
      (deferred:nextc it
        (lambda (response)
 	 (let* ((body (soundklaus-response-body response))
@@ -904,8 +925,9 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (soundklaus-with-access-token
    (deferred:$
      (soundklaus-request-send
-      "GET" (soundklaus-my-tracks-url)
-      `(("limit" . ,soundklaus-track-limit)))
+      (soundklaus-make-request
+       "GET" (soundklaus-my-tracks-url)
+       :query-params `(("limit" . ,soundklaus-track-limit))))
      (deferred:nextc it
        (lambda (response)
 	 (let* ((body (soundklaus-response-body response))
