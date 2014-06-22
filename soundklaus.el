@@ -895,7 +895,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
 	   (soundklaus-render-tracks (mapcar 'soundklaus-make-track body))))))))
 
 ;;;###autoload
-(defun soundklaus-install-desktop-entry ()
+(defun soundklaus-desktop-entry-save ()
   "Install the SoundKlaus desktop entry for the X Window System."
   (interactive)
   (let ((dir (file-name-directory soundklaus-desktop-entry)))
