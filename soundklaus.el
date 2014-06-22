@@ -139,7 +139,7 @@
 (defgeneric soundklaus-playlist-add (media)
   "Insert the SoundCloud MEDIA into the EMMS playlist.")
 
-(defgeneric soundklaus-render-list-item (media)
+(defgeneric soundklaus-render (media)
   "Render the SoundCloud MEDIA as a list item.")
 
 (defgeneric soundklaus-path (resource)
@@ -306,9 +306,8 @@ documentation string, and SLOTS the attributes of the resource."
 				 (let ((type (cdr (assoc 'type resource)))
 				       (origin (cdr (assoc 'origin resource))))
 				   (cond
-				    ;; TODO: Load tracks of playlist somehow
-				    ;; ((equal type "playlist")
-				    ;;  (soundklaus-make-playlist origin))
+				    ((equal type "playlist")
+				     (soundklaus-make-playlist origin))
 				    ((equal type "track")
 				     (soundklaus-make-track origin)))))
 			       (cdr (assoc 'collection assoc-list)))))
@@ -671,7 +670,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
 
 ;; List item widgets
 
-(defmethod soundklaus-render-list-item ((track soundklaus-track))
+(defmethod soundklaus-render ((track soundklaus-track))
   (let ((start (point)))
     (soundklaus-render-row
      (propertize (soundklaus-track-header track) 'face 'bold)
@@ -687,7 +686,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
     (put-text-property start (point) :soundklaus-media track)
     (widget-insert "\n")))
 
-(defmethod soundklaus-render-list-item ((playlist soundklaus-playlist))
+(defmethod soundklaus-render ((playlist soundklaus-playlist))
   (let ((start (point)))
     (soundklaus-render-row
      (propertize (concat (soundklaus-playlist-title playlist) " - "
@@ -704,6 +703,9 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
                 (soundklaus-format-duration (soundklaus-track-duration track)))
                (put-text-property start (point) :soundklaus-media track)))
     (widget-insert "\n")))
+
+(defmethod soundklaus-render ((collection soundklaus-collection))
+  (mapcar 'soundklaus-render (soundklaus-collection-content collection)))
 
 (defmacro soundklaus-with-widget (&rest body)
   "Evaluate BODY with in the context of the SoundCloud widget buffer."
@@ -726,21 +728,19 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   "Render SoundCloud COLLECTION as an Emacs widget."
   (soundklaus-with-widget
    (widget-insert "\n  >> ACTIVITIES\n\n")
-   (let ((activities (soundklaus-collection-content collection)))
-     (mapcar 'soundklaus-render-list-item activities))))
+   (soundklaus-render collection)))
 
 (defun soundklaus-render-tracks (tracks)
   "Render SoundCloud TRACKS as an Emacs widget."
   (soundklaus-with-widget
    (widget-insert "\n  >> TRACKS\n\n")
-   (mapc 'soundklaus-render-list-item tracks)))
+   (mapc 'soundklaus-render tracks)))
 
 (defun soundklaus-render-playlists (playlists)
   "Render SoundCloud PLAYLISTS as an Emacs widget."
   (soundklaus-with-widget
    (widget-insert "\n  >> PLAYLISTS\n\n")
-   (mapc 'soundklaus-render-list-item playlists)))
-
+   (mapc 'soundklaus-render playlists)))
 
 ;;;###autoload
 (defun soundklaus-activities ()
