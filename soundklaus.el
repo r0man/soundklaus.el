@@ -838,6 +838,22 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   "Setup hooks for pagination."
   (add-hook 'pre-command-hook 'soundklaus-pre-command-hook t))
 
+(defun soundklaus-body-as-activities (response)
+  "Return the body of the HTTP RESPONSE as a list of tracks."
+  (soundklaus-make-collection (soundklaus-response-body response)))
+
+(defun soundklaus-body-as-tracks (response)
+  "Return the body of the HTTP RESPONSE as a list of tracks."
+  (make-instance
+   'soundklaus-collection
+   :content (mapcar 'soundklaus-make-track (soundklaus-response-body response))))
+
+(defun soundklaus-body-as-playlists (response)
+  "Return the body of the HTTP RESPONSE as a list of playlists."
+  (make-instance
+   'soundklaus-collection
+   :content (mapcar 'soundklaus-make-track (soundklaus-response-body response))))
+
 ;;;###autoload
 (defun soundklaus-activities ()
   "List activities on SoundCloud."
@@ -845,16 +861,15 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (soundklaus-with-access-token
    (let ((request (soundklaus-make-request
 		   "GET" (soundklaus-activities-url)
+		   :query-params
 		   `(("limit" . ,soundklaus-activity-limit)))))
      (deferred:$
        (soundklaus-request-send request)
        (deferred:nextc it
 	 (lambda (response)
-	   (let* ((body (soundklaus-response-body response))
-		  (activities (soundklaus-make-collection body)))
+	   (let ((collection (soundklaus-body-as-activities response)))
 	     (soundklaus-with-widget
-	      "ACTIVITIES"
-	      (soundklaus-render activities)))))))))
+	      "ACTIVITIES" (soundklaus-render collection)))))))))
 
 ;;;###autoload
 (defun soundklaus-tracks (query)
@@ -869,13 +884,12 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
       (soundklaus-request-send request)
       (deferred:nextc it
 	(lambda (response)
-	  (let* ((body (soundklaus-response-body response))
-		 (tracks (mapcar 'soundklaus-make-track body)))
+	  (let ((collection (soundklaus-body-as-tracks response)))
 	    (soundklaus-with-widget
 	     (propertize "TRACKS"
 			 :soundklaus-next (soundklaus-next-request request)
 			 :soundklaus-make 'soundklaus-make-track)
-	     (mapc 'soundklaus-render tracks))
+	     (soundklaus-render collection))
 	    (soundklaus-setup-pagination)))))))
 
 ;;;###autoload
@@ -891,11 +905,10 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
       (soundklaus-request-send request)
       (deferred:nextc it
 	(lambda (response)
-	  (let* ((body (soundklaus-response-body response))
-		 (playlists (mapcar 'soundklaus-make-playlist body)))
+	  (let ((collection (soundklaus-body-as-playlists response)))
 	    (soundklaus-with-widget
 	     (propertize "PLAYLISTS" :soundklaus-next (soundklaus-next-request request))
-	     (mapc 'soundklaus-render playlists))))))))
+	     (soundklaus-render collection))))))))
 
 ;;;###autoload
 (defun soundklaus-my-playlists ()
@@ -909,11 +922,10 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
        (soundklaus-request-send request)
        (deferred:nextc it
 	 (lambda (response)
-	   (let* ((body (soundklaus-response-body response))
-		  (playlists (mapcar 'soundklaus-make-playlist body)))
+	   (let ((collection (soundklaus-body-as-playlists response)))
 	     (soundklaus-with-widget
 	      (propertize "MY PLAYLISTS" :soundklaus-next (soundklaus-next-request request))
-	      (mapc 'soundklaus-render playlists)))))))))
+	      (soundklaus-render collection)))))))))
 
 ;;;###autoload
 (defun soundklaus-my-tracks ()
@@ -927,11 +939,10 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
        (soundklaus-request-send request)
        (deferred:nextc it
 	 (lambda (response)
-	   (let* ((body (soundklaus-response-body response))
-		  (tracks (mapcar 'soundklaus-make-track body)))
+	   (let ((collection (soundklaus-body-as-tracks response)))
 	     (soundklaus-with-widget
 	      (propertize "MY TRACKS" :soundklaus-next (soundklaus-next-request request))
-	      (mapc 'soundklaus-render tracks)))))))))
+	      (soundklaus-render collection)))))))))
 
 ;;;###autoload
 (defun soundklaus-desktop-entry-save ()
