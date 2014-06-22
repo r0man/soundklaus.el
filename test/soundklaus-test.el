@@ -20,6 +20,26 @@
 		 :comment-count 117
 		 :favoritings-count 2287))
 
+(ert-deftest soundklaus-activities-url-test ()
+  (should (equal "https://api.soundcloud.com/me/activities"
+		 (soundklaus-activities-url))))
+
+(ert-deftest soundklaus-my-tracks-url-test ()
+  (should (equal "https://api.soundcloud.com/me/tracks"
+		 (soundklaus-my-tracks-url))))
+
+(ert-deftest soundklaus-my-playlists-url-test ()
+  (should (equal "https://api.soundcloud.com/me/playlists"
+		 (soundklaus-my-playlists-url))))
+
+(ert-deftest soundklaus-tracks-url-test ()
+  (should (equal "https://api.soundcloud.com/tracks"
+		 (soundklaus-tracks-url))))
+
+(ert-deftest soundklaus-playlists-url-test ()
+  (should (equal "https://api.soundcloud.com/playlists"
+		 (soundklaus-playlists-url))))
+
 (ert-deftest soundklaus-remove-nil-values-test ()
   (should (equal `(("client_id" . ,soundklaus-client-id))
 		 (soundklaus-remove-nil-values

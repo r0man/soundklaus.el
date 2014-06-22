@@ -149,6 +149,26 @@
   "Return the URL to the RESOURCE on SoundCloud."
   (concat soundklaus-api-root (soundklaus-path resource)))
 
+(defun soundklaus-activities-url ()
+  "Return the URL of the activities of the user on SoundCloud."
+  (concat soundklaus-api-root "/me/activities"))
+
+(defun soundklaus-my-tracks-url ()
+  "Return the URL of tracks of the user on SoundCloud."
+  (concat soundklaus-api-root "/me/tracks"))
+
+(defun soundklaus-my-playlists-url ()
+  "Return the URL of playlists of the user on SoundCloud."
+  (concat soundklaus-api-root "/me/playlists"))
+
+(defun soundklaus-tracks-url ()
+  "Return the URL of tracks on SoundCloud."
+  (concat soundklaus-api-root "/tracks"))
+
+(defun soundklaus-playlists-url ()
+  "Return the URL of playlists on SoundCloud."
+  (concat soundklaus-api-root "/playlists"))
+
 (defmacro soundklaus-with-access-token (&rest body)
   "Ensure that the `soundklaus-access-token` is not nil.
 If `soundklaus-access-token` is not set raise an error, otherwise
@@ -621,16 +641,15 @@ will be underscored."
     (re-search-forward "^$" nil 'move)
     (json-read)))
 
-(defun soundklaus-request (method path params)
+(defun soundklaus-request (method url params)
   "Send an deferred HTTP request to the SoundCloud API.
-METHOD is the HTTP method used in the request, PATH the path
-component of the SoundCloud URL and PARAMS the query parameters
-of the request."
+METHOD is the HTTP method used in the request, URL the SoundCloud
+URL and PARAMS the query parameters of the request."
   (let ((nd (deferred:new))
 	(url-request-extra-headers '(("Accept" . "application/json"))))
     (deferred:$
       (deferred:url-retrieve
-	(concat soundklaus-api-root path "?"
+	(concat url "?"
 		(soundklaus-url-encode
 		 (soundklaus-remove-nil-values
 		  (append params `(("client_id" . ,soundklaus-client-id)
@@ -754,7 +773,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (interactive)
   (deferred:$
     (soundklaus-request
-     :get "/me/activities"
+     :get (soundklaus-activities-url)
      `(("limit" . ,(number-to-string soundklaus-activity-limit))))
     (deferred:nextc it
       (lambda (data)
@@ -766,7 +785,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (interactive "MQuery: ")
   (deferred:$
     (soundklaus-request
-     :get "/tracks"
+     :get (soundklaus-tracks-url)
      `(("limit" . ,(number-to-string soundklaus-track-limit))
        ("q" . ,query)))
     (deferred:nextc it
@@ -779,7 +798,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (interactive "MQuery: ")
   (deferred:$
     (soundklaus-request
-     :get "/playlists"
+     :get (soundklaus-playlists-url)
      `(("limit" . ,(number-to-string soundklaus-playlist-limit))
        ("q" . ,query)))
     (deferred:nextc it
@@ -793,7 +812,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (soundklaus-with-access-token
    (deferred:$
      (soundklaus-request
-      :get "/me/playlists"
+      :get (soundklaus-my-playlists-url)
       `(("limit" . ,(number-to-string soundklaus-playlist-limit))))
      (deferred:nextc it
        (lambda (data)
@@ -806,7 +825,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (soundklaus-with-access-token
    (deferred:$
      (soundklaus-request
-      :get "/me/tracks"
+      :get (soundklaus-my-tracks-url)
       `(("limit" . ,(number-to-string soundklaus-track-limit))))
      (deferred:nextc it
        (lambda (data)
