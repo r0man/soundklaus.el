@@ -902,14 +902,13 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
     (unless (file-exists-p dir)
       (make-directory dir))
     (with-temp-buffer
-      (insert (s-join "\n"
-		      '("[Desktop Entry]"
-			"Name=SoundKlaus"
-			"Exec=emacsclient %u"
-			"Icon=emacs-icon"
-			"Type=Application"
-			"Terminal=false"
-			"MimeType=x-scheme-handler/soundklaus;")))
+      (insert (s-join "\n" '("[Desktop Entry]"
+			     "Name=SoundKlaus"
+			     "Exec=emacsclient %u"
+			     "Icon=emacs-icon"
+			     "Type=Application"
+			     "Terminal=false"
+			     "MimeType=x-scheme-handler/soundklaus;")))
       (write-file soundklaus-desktop-entry))))
 
 (defvar soundklaus-mode-map
