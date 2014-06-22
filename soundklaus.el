@@ -824,10 +824,6 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
      	     `(("limit" . ,limit)
      	       ("offset" . ,offset))))))
 
-(defun soundklaus-next-response (response)
-  "Return the HTTP request to return the next page of a response."
-  (soundklaus-next-request (soundklaus-response-request response)))
-
 (defun soundklaus-pre-command-hook ()
   (let ((percent (/ (* 100 (point)) (point-max))))
     (when (> percent 80)
@@ -847,94 +843,95 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   "List activities on SoundCloud."
   (interactive)
   (soundklaus-with-access-token
-   (deferred:$
-     (soundklaus-request-send
-      "GET" (soundklaus-activities-url)
-      `(("limit" . ,soundklaus-activity-limit)))
-     (deferred:nextc it
-       (lambda (response)
-	 (let* ((body (soundklaus-response-body response))
-		(activities (soundklaus-make-collection body)))
-	   (soundklaus-with-widget
-	    "ACTIVITIES"
-	    (soundklaus-render activities))))))))
+   (let ((request (soundklaus-make-request
+		   "GET" (soundklaus-activities-url)
+		   `(("limit" . ,soundklaus-activity-limit)))))
+     (deferred:$
+       (soundklaus-request-send request)
+       (deferred:nextc it
+	 (lambda (response)
+	   (let* ((body (soundklaus-response-body response))
+		  (activities (soundklaus-make-collection body)))
+	     (soundklaus-with-widget
+	      "ACTIVITIES"
+	      (soundklaus-render activities)))))))))
 
 ;;;###autoload
 (defun soundklaus-tracks (query)
   "List all tracks on SoundCloud matching QUERY."
   (interactive "MQuery: ")
-  (deferred:$
-    (soundklaus-request-send
-     (soundklaus-make-request
-      "GET" (soundklaus-tracks-url)
-      :query-params
-      `(("limit" . ,soundklaus-track-limit)
-	("q" . ,query))))
-    (deferred:nextc it
-      (lambda (response)
-	(let* ((body (soundklaus-response-body response))
-	       (tracks (mapcar 'soundklaus-make-track body)))
-	  (soundklaus-with-widget
-	   (propertize "TRACKS"
-		       :soundklaus-next (soundklaus-next-response response)
-		       :soundklaus-make 'soundklaus-make-track)
-	   (mapc 'soundklaus-render tracks))
-	  (soundklaus-setup-pagination))))))
+  (let ((request (soundklaus-make-request
+		  "GET" (soundklaus-tracks-url)
+		  :query-params
+		  `(("limit" . ,soundklaus-track-limit)
+		    ("q" . ,query)))))
+    (deferred:$
+      (soundklaus-request-send request)
+      (deferred:nextc it
+	(lambda (response)
+	  (let* ((body (soundklaus-response-body response))
+		 (tracks (mapcar 'soundklaus-make-track body)))
+	    (soundklaus-with-widget
+	     (propertize "TRACKS"
+			 :soundklaus-next (soundklaus-next-request request)
+			 :soundklaus-make 'soundklaus-make-track)
+	     (mapc 'soundklaus-render tracks))
+	    (soundklaus-setup-pagination)))))))
 
 ;;;###autoload
 (defun soundklaus-playlists (query)
   "List all playlists on SoundCloud matching QUERY."
   (interactive "MQuery: ")
-  (deferred:$
-    (soundklaus-request-send
-     (soundklaus-make-request
-      "GET" (soundklaus-playlists-url)
-      :query-params
-      `(("limit" . ,soundklaus-playlist-limit)
-	("q" . ,query))))
-    (deferred:nextc it
-      (lambda (response)
-	(let* ((body (soundklaus-response-body response))
-	       (playlists (mapcar 'soundklaus-make-playlist body)))
-	  (soundklaus-with-widget
-	   (propertize "PLAYLISTS" :soundklaus-next (soundklaus-next-response response))
-	   (mapc 'soundklaus-render playlists)))))))
+  (let ((request (soundklaus-make-request
+		  "GET" (soundklaus-playlists-url)
+		  :query-params
+		  `(("limit" . ,soundklaus-playlist-limit)
+		    ("q" . ,query)))))
+    (deferred:$
+      (soundklaus-request-send request)
+      (deferred:nextc it
+	(lambda (response)
+	  (let* ((body (soundklaus-response-body response))
+		 (playlists (mapcar 'soundklaus-make-playlist body)))
+	    (soundklaus-with-widget
+	     (propertize "PLAYLISTS" :soundklaus-next (soundklaus-next-request request))
+	     (mapc 'soundklaus-render playlists))))))))
 
 ;;;###autoload
 (defun soundklaus-my-playlists ()
   "List your playlists on SoundCloud."
   (interactive)
   (soundklaus-with-access-token
-   (deferred:$
-     (soundklaus-request-send
-      (soundklaus-make-request
-       "GET" (soundklaus-my-playlists-url)
-       :query-params `(("limit" . ,soundklaus-playlist-limit))))
-     (deferred:nextc it
-       (lambda (response)
-	 (let* ((body (soundklaus-response-body response))
-		(playlists (mapcar 'soundklaus-make-playlist body)))
-	   (soundklaus-with-widget
-	    (propertize "MY PLAYLISTS" :soundklaus-next (soundklaus-next-response response))
-	    (mapc 'soundklaus-render playlists))))))))
+   (let ((request (soundklaus-make-request
+		   "GET" (soundklaus-my-playlists-url)
+		   :query-params `(("limit" . ,soundklaus-playlist-limit)))))
+     (deferred:$
+       (soundklaus-request-send request)
+       (deferred:nextc it
+	 (lambda (response)
+	   (let* ((body (soundklaus-response-body response))
+		  (playlists (mapcar 'soundklaus-make-playlist body)))
+	     (soundklaus-with-widget
+	      (propertize "MY PLAYLISTS" :soundklaus-next (soundklaus-next-request request))
+	      (mapc 'soundklaus-render playlists)))))))))
 
 ;;;###autoload
 (defun soundklaus-my-tracks ()
   "List your tracks on SoundCloud."
   (interactive)
   (soundklaus-with-access-token
-   (deferred:$
-     (soundklaus-request-send
-      (soundklaus-make-request
-       "GET" (soundklaus-my-tracks-url)
-       :query-params `(("limit" . ,soundklaus-track-limit))))
-     (deferred:nextc it
-       (lambda (response)
-	 (let* ((body (soundklaus-response-body response))
-		(tracks (mapcar 'soundklaus-make-track body)))
-	   (soundklaus-with-widget
-	    (propertize "MY TRACKS" :soundklaus-next (soundklaus-next-response response))
-	    (mapc 'soundklaus-render tracks))))))))
+   (let ((request (soundklaus-make-request
+		   "GET" (soundklaus-my-tracks-url)
+		   :query-params `(("limit" . ,soundklaus-track-limit)))))
+     (deferred:$
+       (soundklaus-request-send request)
+       (deferred:nextc it
+	 (lambda (response)
+	   (let* ((body (soundklaus-response-body response))
+		  (tracks (mapcar 'soundklaus-make-track body)))
+	     (soundklaus-with-widget
+	      (propertize "MY TRACKS" :soundklaus-next (soundklaus-next-request request))
+	      (mapc 'soundklaus-render tracks)))))))))
 
 ;;;###autoload
 (defun soundklaus-desktop-entry-save ()
