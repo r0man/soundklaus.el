@@ -807,6 +807,28 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
      (goto-char 0)
      (soundklaus-next-media)))
 
+(defun soundklaus-next-request (request)
+  "Return the HTTP request to return the next page of a response."
+  (let* ((query-params (soundklaus-request-query-params request))
+	 (limit-alist (assoc "limit" query-params))
+	 (limit (or (cdr limit-alist) 10))
+	 (offset-alist (assoc "offset" query-params))
+	 (offset (+ (or (cdr offset-alist) 0) limit)))
+    (make-instance
+     'soundklaus-request
+     :method (soundklaus-request-method request)
+     :url (soundklaus-request-url request)
+     :query-params
+     (append (->> query-params
+	       (delq limit-alist)
+	       (delq offset-alist))
+     	     `(("limit" . ,limit)
+     	       ("offset" . ,offset))))))
+
+(defun soundklaus-next-response (response)
+  "Return the HTTP request to return the next page of a response."
+  (soundklaus-next-request (soundklaus-response-request response)))
+
 ;;;###autoload
 (defun soundklaus-activities ()
   "List activities on SoundCloud."
@@ -815,7 +837,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
    (deferred:$
      (soundklaus-request-send
       "GET" (soundklaus-activities-url)
-      `(("limit" . ,(number-to-string soundklaus-activity-limit))))
+      `(("limit" . ,soundklaus-activity-limit)))
      (deferred:nextc it
        (lambda (response)
 	 (let* ((body (soundklaus-response-body response))
@@ -831,14 +853,14 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (deferred:$
     (soundklaus-request-send
      "GET" (soundklaus-tracks-url)
-     `(("limit" . ,(number-to-string soundklaus-track-limit))
+     `(("limit" . ,soundklaus-track-limit)
        ("q" . ,query)))
     (deferred:nextc it
       (lambda (response)
 	(let* ((body (soundklaus-response-body response))
 	       (tracks (mapcar 'soundklaus-make-track body)))
 	  (soundklaus-with-widget
-	   "TRACKS"
+	   (propertize "TRACKS" :soundklaus-next (soundklaus-next-response response))
 	   (mapc 'soundklaus-render tracks)))))))
 
 ;;;###autoload
@@ -848,14 +870,14 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (deferred:$
     (soundklaus-request-send
      "GET" (soundklaus-playlists-url)
-     `(("limit" . ,(number-to-string soundklaus-playlist-limit))
+     `(("limit" . ,soundklaus-playlist-limit)
        ("q" . ,query)))
     (deferred:nextc it
       (lambda (response)
 	(let* ((body (soundklaus-response-body response))
 	       (playlists (mapcar 'soundklaus-make-playlist body)))
 	  (soundklaus-with-widget
-	   "PLAYLISTS"
+	   (propertize "PLAYLISTS" :soundklaus-next (soundklaus-next-response response))
 	   (mapc 'soundklaus-render playlists)))))))
 
 ;;;###autoload
@@ -866,13 +888,13 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
    (deferred:$
      (soundklaus-request-send
       "GET" (soundklaus-my-playlists-url)
-      `(("limit" . ,(number-to-string soundklaus-playlist-limit))))
+      `(("limit" . ,soundklaus-playlist-limit)))
      (deferred:nextc it
        (lambda (response)
 	 (let* ((body (soundklaus-response-body response))
 		(playlists (mapcar 'soundklaus-make-playlist body)))
 	   (soundklaus-with-widget
-	    "MY PLAYLISTS"
+	    (propertize "MY PLAYLISTS" :soundklaus-next (soundklaus-next-response response))
 	    (mapc 'soundklaus-render playlists))))))))
 
 ;;;###autoload
@@ -883,13 +905,13 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
    (deferred:$
      (soundklaus-request-send
       "GET" (soundklaus-my-tracks-url)
-      `(("limit" . ,(number-to-string soundklaus-track-limit))))
+      `(("limit" . ,soundklaus-track-limit)))
      (deferred:nextc it
        (lambda (response)
 	 (let* ((body (soundklaus-response-body response))
 		(tracks (mapcar 'soundklaus-make-track body)))
 	   (soundklaus-with-widget
-	    "MY TRACKS"
+	    (propertize "MY TRACKS" :soundklaus-next (soundklaus-next-response response))
 	    (mapc 'soundklaus-render tracks))))))))
 
 ;;;###autoload

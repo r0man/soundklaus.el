@@ -56,6 +56,23 @@
   (should (equal "https://api.soundcloud.com/playlists"
 		 (soundklaus-playlists-url))))
 
+(ert-deftest soundklaus-next-request-test ()
+  (let* ((request (soundklaus-make-request "GET" (soundklaus-tracks-url)))
+	 (next (soundklaus-next-request request))
+	 (params (soundklaus-request-query-params next)))
+    (should (equal 10 (cdr (assoc "limit" params))))
+    (should (equal 10 (cdr (assoc "offset" params)))))
+  (let* ((request (soundklaus-make-request "GET" (soundklaus-tracks-url) :query-params '(("offset" . 10))))
+	 (next (soundklaus-next-request request))
+	 (params (soundklaus-request-query-params next)))
+    (should (equal 10 (cdr (assoc "limit" params))))
+    (should (equal 20 (cdr (assoc "offset" params)))))
+  (let* ((request (soundklaus-make-request "GET" (soundklaus-tracks-url) :query-params '(("limit" . 5) ("offset" . 20))))
+	 (next (soundklaus-next-request request))
+	 (params (soundklaus-request-query-params next)))
+    (should (equal 5 (cdr (assoc "limit" params))))
+    (should (equal 25 (cdr (assoc "offset" params))))))
+
 (ert-deftest soundklaus-remove-nil-values-test ()
   (should (equal `(("client_id" . ,soundklaus-client-id))
 		 (soundklaus-remove-nil-values
