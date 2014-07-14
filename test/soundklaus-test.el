@@ -238,4 +238,13 @@
     (should (equal "access_denied" (cadr (assoc "error" params))))
     (should (equal "The+end-user+denied+the+request" (cadr (assoc "error_description" params))))))
 
+(ert-deftest soundklaus-parse-duration ()
+  (should (equal 0 (soundklaus-parse-duration "0s")))
+  (should (equal 1 (soundklaus-parse-duration "1s")))
+  (should (equal 60 (soundklaus-parse-duration "1m")))
+  (should (equal 3600 (soundklaus-parse-duration "1h")))
+  (should (equal 16200 (soundklaus-parse-duration "4h 30m")))
+  (should (equal 100800 (soundklaus-parse-duration "1d 4h")))
+  (should (equal 60 (soundklaus-parse-duration "1m garbage"))))
+
 (provide 'soundklaus-test)

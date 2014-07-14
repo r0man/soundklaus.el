@@ -824,6 +824,22 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
      	     `(("limit" . ,limit)
      	       ("offset" . ,offset))))))
 
+(defun soundklaus-parse-duration (s)
+  "Parse the duration from the string S nad return the number of seconds."
+  (let ((tokens `(("s" . ,1)
+		  ("m" . ,60)
+		  ("h" . ,(* 60 60))
+		  ("d" . ,(* 60 60 24)))))
+    (-reduce-from
+     (lambda (memo s)
+       (let* ((matches (s-match "\\([[:digit:]]+\\)\\([smhd]\\)" s))
+	      (multiplicator (cdr (assoc (elt matches 2) tokens))))
+	 (if multiplicator
+	     (+ memo (* (string-to-number (elt matches 1))
+			multiplicator))
+	   memo)))
+     0 (s-split-words s))))
+
 (defun soundklaus-pre-command-hook ()
   (let ((percent (/ (* 100 (point)) (point-max))))
     (when (> percent 80)
