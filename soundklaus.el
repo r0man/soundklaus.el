@@ -840,6 +840,13 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
 	   memo)))
      0 (s-split-words s))))
 
+(defun soundklaus-seek-to (duration)
+  "Seek the current player to DURATION."
+  (interactive "MSeek to: ")
+  (let ((seconds (soundklaus-parse-duration duration)))
+    (if (numberp seconds)
+	(emms-seek-to seconds))))
+
 (defun soundklaus-pre-command-hook ()
   (let ((percent (/ (* 100 (point)) (point-max))))
     (when (> percent 80)
