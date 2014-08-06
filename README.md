@@ -59,7 +59,9 @@ You can search songs with `M-x soundklaus-tracks` and playlists with `M-x soundk
 
 ## Authentication
 
-Some commands like `M-x soundklaus-activities` or `M-x soundklaus-my-tracks` need access to your *SoundCloud* account. Your web browser should open Emacs via `emacsclient` for the [OAuth2](http://oauth.net/2) callback URL `soundklaus://oauth/callback`. On a Linux system you can configure this by running `M-x soundklaus-desktop-entry-save`. This will write the following content to the `~/.local/share/applications/soundklaus.desktop` file in your home directory.
+Some commands like `M-x soundklaus-activities` or `M-x soundklaus-my-tracks` need access to your *SoundCloud* account. Your web browser should open Emacs via `emacsclient` for the [OAuth2](http://oauth.net/2) callback URL `soundklaus://oauth/callback`. 
+
+On a Linux system you can configure this by running `M-x soundklaus-desktop-entry-save`. This will write the following content to the `~/.local/share/applications/soundklaus.desktop` file in your home directory.
 
 
 ```
@@ -73,6 +75,20 @@ MimeType=x-scheme-handler/soundklaus;
 ```
 
 To setup this functionality on other operating systems take a look at the [system setup](http://orgmode.org/worg/org-contrib/org-protocol.html#sec-3) section in [org-protocol.el](http://orgmode.org/worg/org-contrib/org-protocol.html) and adapt it for *soundklaus.el*.
+
+In detail what should be done is this:
+
+- Make sure emacs runs as a server or as a deamon (because we use emacsclient for this)
+- Run these commands (some gnome utils may be necessary for them). Assuming emacs is in /usr/bin/emacsclient in anycase, replace with whatever `$ which emacs` gives you.
+```
+$ gconftool-2 -s /desktop/gnome/url-handlers/soundklaus/command '/usr/bin/emacsclient %s' --type String
+$ gconftool-2 -s /desktop/gnome/url-handlers/soundklaus/enabled --type Boolean true
+```
+- Use firefox for this and add a new protocol handler with [http://kb.mozillazine.org/Register_protocol#Linux](this guide on registering new protocols). Remember to change foo with soundklaus
+- Add this line to /usr/share/applications/defaults.list
+```
+x-scheme-handler/soundklaus=soundklaus.desktop
+```
 
 Now you can start the [OAuth2](http://oauth.net/2) authentication dance with `M-x soundklaus-connect`. You should get redirected to *SoundCloud* and allow *soundklaus.el* to access your account. After pressing the `Connect` button on the *SoundCloud* page the browser should open Emacs and set the `soundklaus-access-token` customization variable. You should save and load this variable from a safe place for future sessions.
 
