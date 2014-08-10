@@ -875,7 +875,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   "Return the body of the HTTP RESPONSE as a list of playlists."
   (make-instance
    'soundklaus-collection
-   :content (mapcar 'soundklaus-make-track (soundklaus-response-body response))))
+   :content (mapcar 'soundklaus-make-playlist (soundklaus-response-body response))))
 
 ;;;###autoload
 (defun soundklaus-activities ()
