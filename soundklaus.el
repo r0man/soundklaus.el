@@ -691,13 +691,13 @@ will be underscored."
 			   ("oauth_token" . ,soundklaus-access-token)))))
 
 (defun soundklaus-request-expand-url (request)
-  "Return the expanded URL of REQUEST including the query parameters"
+  "Return the expanded URL of REQUEST including the query parameters."
   (let ((params (soundklaus-request-query-params request)))
     (concat (soundklaus-request-url request) "?"
 	    (soundklaus-url-encode (soundklaus-remove-nil-values params)))))
 
 (defun soundklaus-request-send (request)
-  "Send an deferred HTTP request to the SoundCloud API.
+  "Send an deferred HTTP REQUEST to the SoundCloud API.
 METHOD is the HTTP method used in the request, URL the SoundCloud
 URL and PARAMS the query parameters of the request."
   (let ((nd (deferred:new)))
@@ -807,7 +807,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
      (soundklaus-next-media)))
 
 (defun soundklaus-next-request (request)
-  "Return the HTTP request to return the next page of a response."
+  "Return the HTTP REQUEST to return the next page of a response."
   (let* ((query-params (soundklaus-request-query-params request))
 	 (limit-alist (assoc "limit" query-params))
 	 (limit (or (cdr limit-alist) 10))
