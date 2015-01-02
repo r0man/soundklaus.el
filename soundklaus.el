@@ -825,7 +825,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
      	       ("offset" . ,offset))))))
 
 (defun soundklaus-parse-duration (s)
-  "Parse the duration from the string S nad return the number of seconds."
+  "Parse the duration from the string S and return the number of seconds."
   (let ((tokens `(("s" . ,1)
 		  ("m" . ,60)
 		  ("h" . ,(* 60 60))
