@@ -727,13 +727,15 @@ URL and PARAMS the query parameters of the request."
 	  (object-slots instance))
     instance))
 
-(defun soundklaus-format-duration (duration-in-ms)
+(defun soundklaus-format-duration (duration-in-ms &optional always-show-hours)
   "Format DURATION-IN-MS in the HH:MM:SS format."
   (let* ((duration (/ duration-in-ms 1000))
 	 (hours (floor (/ duration 3600)))
 	 (minutes (floor (/ (- duration (* hours 3600)) 60)))
 	 (seconds (floor (- duration (* hours 3600) (* minutes 60)))))
-    (format "%02d:%02d:%02d" hours minutes seconds)))
+    (if (or always-show-hours (plusp hours))
+        (format "%02d:%02d:%02d" hours minutes seconds)
+      (format "%02d:%02d" minutes seconds))))
 
 (defun soundklaus-render-row (left right &optional width-right)
   "Render a row with a LEFT and a RIGHT part.

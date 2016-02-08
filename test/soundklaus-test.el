@@ -98,7 +98,7 @@
 		 (soundklaus-track-header soundklaus-example-track))))
 
 (ert-deftest soundklaus-track-time-test ()
-  (should (equal "00:08:22" (soundklaus-track-time soundklaus-example-track))))
+  (should (equal "08:22" (soundklaus-track-time soundklaus-example-track))))
 
 (ert-deftest soundklaus-track-stream-url-test ()
   (should (equal (format "https://api.soundcloud.com/tracks/40258263/stream?client_id=%s" soundklaus-client-id)
@@ -110,9 +110,12 @@
 		   (soundklaus-track-stream-url soundklaus-example-track)))))
 
 (ert-deftest soundklaus-format-duration-test ()
-  (should (equal "00:00:00" (soundklaus-format-duration 0)))
-  (should (equal "00:00:01" (soundklaus-format-duration 1000)))
-  (should (equal "00:01:00" (soundklaus-format-duration (* 60 1000))))
+  (should (equal "00:00" (soundklaus-format-duration 0)))
+  (should (equal "00:00:00" (soundklaus-format-duration 0 t)))
+  (should (equal "00:01" (soundklaus-format-duration 1000)))
+  (should (equal "00:00:01" (soundklaus-format-duration 1000 t)))
+  (should (equal "01:00" (soundklaus-format-duration (* 60 1000))))
+  (should (equal "00:01:00" (soundklaus-format-duration (* 60 1000) t)))
   (should (equal "01:00:00" (soundklaus-format-duration (* 60 60 1000)))))
 
 (ert-deftest soundklaus-url-encode-test ()
