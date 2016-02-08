@@ -1,12 +1,12 @@
 ;;; soundklaus.el --- Play SoundCloud music in Emacs via EMMS -*- lexical-binding: t -*-
 
-;; Copyright © 2014 r0man <roman@burningswell.com>
+;; Copyright © 2014-2016 r0man <roman@burningswell.com>
 
 ;; Author: r0man <roman@burningswell.com>
 ;; URL: https://github.com/r0man/soundklaus.el
 ;; Keywords: soundcloud, music, emms
 ;; Version: 0.1.0
-;; Package-Requires: ((dash "1.5.0") (emacs "24") (emms "3.0") (deferred "0.3.2") (s "1.6.0") (pkg-info "0.4") (cl-lib "0.5"))
+;; Package-Requires: ((dash "2.12.1") (emacs "24") (emms "4.0") (s "1.10.0") (pkg-info "0.4") (cl-lib "0.5"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -44,22 +44,16 @@
 
 (require 'cl-lib)
 (require 'dash)
-(require 'deferred)
 (require 'eieio)
 (require 'emms)
-(require 'json)
 (require 's)
+(require 'soundklaus-request)
 (require 'widget)
 
 ;; Customization
 
 (defcustom soundklaus-access-token nil
   "The OAuth2 access token for the SoundCloud API."
-  :type 'string
-  :group 'soundklaus-mode)
-
-(defcustom soundklaus-api-root "https://api.soundcloud.com"
-  "The SoundCloud API root URL."
   :type 'string
   :group 'soundklaus-mode)
 
@@ -103,16 +97,6 @@
   :type 'integer
   :group 'soundklaus-mode)
 
-(defcustom soundklaus-user-limit 20
-  "The number of users to fetch from SoundCloud at once."
-  :type 'integer
-  :group 'soundklaus-mode)
-
-(defcustom soundklaus-port 8383
-  "The port number on which playlists are served."
-  :type 'integer
-  :group 'soundklaus-mode)
-
 (defcustom soundklaus-padding 2
   "The number of columns used for padding on the left side of the buffer."
   :type 'integer
@@ -144,30 +128,6 @@
 
 (defgeneric soundklaus-path (resource)
   "Returns the path to the RESOURCE on SoundCloud.")
-
-(defun soundklaus-url (resource)
-  "Return the URL to the RESOURCE on SoundCloud."
-  (concat soundklaus-api-root (soundklaus-path resource)))
-
-(defun soundklaus-activities-url ()
-  "Return the URL of the activities of the user on SoundCloud."
-  (concat soundklaus-api-root "/me/activities"))
-
-(defun soundklaus-my-tracks-url ()
-  "Return the URL of tracks of the user on SoundCloud."
-  (concat soundklaus-api-root "/me/tracks"))
-
-(defun soundklaus-my-playlists-url ()
-  "Return the URL of playlists of the user on SoundCloud."
-  (concat soundklaus-api-root "/me/playlists"))
-
-(defun soundklaus-tracks-url ()
-  "Return the URL of tracks on SoundCloud."
-  (concat soundklaus-api-root "/tracks"))
-
-(defun soundklaus-playlists-url ()
-  "Return the URL of playlists on SoundCloud."
-  (concat soundklaus-api-root "/playlists"))
 
 (defmacro soundklaus-with-access-token (&rest body)
   "Ensure that the `soundklaus-access-token` is not nil.
@@ -333,44 +293,6 @@ documentation string, and SLOTS the attributes of the resource."
 			       (cdr (assoc 'collection assoc-list)))))
       collection)))
 
-;; HTTP request
-
-(defclass soundklaus-request ()
-  ((headers
-    :initarg :headers
-    :accessor soundklaus-request-headers
-    :documentation "The HTTP headers of the request.")
-   (method
-    :initarg :method
-    :accessor soundklaus-request-method
-    :documentation "The HTTP method of the request.")
-   (url
-    :initarg :url
-    :accessor soundklaus-request-url
-    :documentation "The HTTP URL of the request.")
-   (query-params
-    :initarg :query-params
-    :accessor soundklaus-request-query-params
-    :documentation "The query parameters of the HTTP request."))
-  "A class representing a HTTP request.")
-
-;; HTTP response
-
-(defclass soundklaus-response ()
-  ((status
-    :initarg :status
-    :accessor soundklaus-response-status
-    :documentation "The HTTP status code of the response.")
-   (body
-    :initarg :body
-    :accessor soundklaus-response-body
-    :documentation "The HTTP body of the response.")
-   (request
-    :initarg :request
-    :accessor soundklaus-response-request
-    :documentation "The HTTP request of the response."))
-  "A class representing a HTTP response")
-
 ;; EMMS Sources
 
 (define-emms-source soundklaus-track (track)
@@ -487,40 +409,6 @@ TRACK is song number N."
   "Return the PLAYLIST duration formatted as HH:MM:SS."
   (soundklaus-format-duration (soundklaus-playlist-duration playlist)))
 
-(defun soundklaus-transform (arg transform-fn)
-  "Transform ARG with the transformation function TRANSFORM-FN.
-ARG can be an assoc list, hash table, string or a symbol.  If ARG
-is an assoc list or hash table only the keys will be
-transformed."
-  (cond
-   ((and (listp arg) (listp (car arg)))
-    (mapcar (lambda (c) (cons (soundklaus-transform (car c) transform-fn) (cdr c))) arg))
-   ((and (listp arg) (atom (car arg)))
-    (cons (soundklaus-transform (car arg) transform-fn)
-          (cdr arg)))
-   ((hash-table-p arg)
-    (let ((other (make-hash-table :test 'equal)))
-      (maphash (lambda (key value) (puthash (soundklaus-transform key transform-fn) value other)) arg)
-      other))
-   ((stringp arg)
-    (funcall transform-fn arg))
-   ((symbolp arg)
-    (intern (soundklaus-transform (symbol-name arg) transform-fn)))))
-
-(defun soundklaus-dasherize (arg)
-  "Replace each underscore in ARG with a dash.
-ARG can be an association list, hash table, string or a
-symbol.  If ARG is an association list or hash table only the keys
-will be dasherized."
-  (soundklaus-transform arg (lambda (string) (replace-regexp-in-string "_" "-" string))))
-
-(defun soundklaus-underscore (arg)
-  "Replace each dash in ARG with an underscore.
-ARG can be an association list, hash table, string or a
-symbol.  If ARG is an association list or hash table only the keys
-will be underscored."
-  (soundklaus-transform arg (lambda (string) (replace-regexp-in-string "-" "_" string))))
-
 (defun soundklaus-playlist-username (playlist)
   "Return the username of PLAYLIST."
   (soundklaus-user-username (soundklaus-playlist-user playlist)))
@@ -620,12 +508,14 @@ will be underscored."
 
 (defun soundklaus-connect-url ()
   "Return the SoundCloud connect url."
-  (concat soundklaus-api-root "/connect?"
-          (soundklaus-url-encode
-           `(("client_id" . ,soundklaus-client-id)
-             ("redirect_uri" . ,soundklaus-redirect-url)
-             ("response_type" . "code_and_token")
-             ("scope" . "non-expiring")))))
+  (soundklaus-request-url
+   (soundklaus-make-request
+    "/connect"
+    :query-params
+    `(("client_id" . ,soundklaus-client-id)
+      ("redirect_uri" . ,soundklaus-redirect-url)
+      ("response_type" . "code_and_token")
+      ("scope" . "non-expiring")))))
 
 (defun soundklaus-connect ()
   "Connect with SoundCloud."
@@ -672,51 +562,6 @@ will be underscored."
       (ad-set-arg 0 files)
       ad-do-it)))
 
-(defun soundklaus-parse-response (buffer)
-  "Parse the JSON response from BUFFER."
-  (with-current-buffer buffer
-    (encode-coding-region (point-min) (point-max) 'latin-1)
-    (decode-coding-region (point-min) (point-max) 'utf-8)
-    (goto-char (point-min))
-    (re-search-forward "^$" nil 'move)
-    (json-read)))
-
-(cl-defun soundklaus-make-request (method url &key headers query-params)
-  "Return a HTTP request of METHOD to URL with query parameters QUERY-PARAMS."
-  (make-instance 'soundklaus-request
-		 :headers (append headers '(("Accept" . "application/json")))
-		 :method method
-		 :url url
-		 :query-params
-		 (append query-params
-			 `(("client_id" . ,soundklaus-client-id)
-			   ("oauth_token" . ,soundklaus-access-token)))))
-
-(defun soundklaus-request-expand-url (request)
-  "Return the expanded URL of REQUEST including the query parameters."
-  (let ((params (soundklaus-request-query-params request)))
-    (concat (soundklaus-request-url request) "?"
-	    (soundklaus-url-encode (soundklaus-remove-nil-values params)))))
-
-(defun soundklaus-request-send (request)
-  "Send an deferred HTTP REQUEST to the SoundCloud API.
-METHOD is the HTTP method used in the request, URL the SoundCloud
-URL and PARAMS the query parameters of the request."
-  (let ((nd (deferred:new)))
-    (deferred:$
-      (let ((url-request-extra-headers (soundklaus-request-headers request))
-	    (url-request-method (soundklaus-request-method request)))
-	(deferred:url-retrieve
-	  (soundklaus-request-expand-url request)))
-      (deferred:nextc it
-	(lambda (buffer)
-	  (deferred:post-task nd 'ok
-	    (make-instance
-	     'soundklaus-response
-	     :body (soundklaus-parse-response buffer)
-	     :request request)))))
-    nd))
-
 (defun soundklaus-slurp-instance (class assoc-list)
   "Make an instance of CLASS and initialize it's slots from the ASSOC-LIST."
   (let ((instance (make-instance class)))
@@ -729,13 +574,14 @@ URL and PARAMS the query parameters of the request."
 
 (defun soundklaus-format-duration (duration-in-ms &optional always-show-hours)
   "Format DURATION-IN-MS in the HH:MM:SS format."
-  (let* ((duration (/ duration-in-ms 1000))
-	 (hours (floor (/ duration 3600)))
-	 (minutes (floor (/ (- duration (* hours 3600)) 60)))
-	 (seconds (floor (- duration (* hours 3600) (* minutes 60)))))
-    (if (or always-show-hours (plusp hours))
-        (format "%02d:%02d:%02d" hours minutes seconds)
-      (format "%02d:%02d" minutes seconds))))
+  (when duration-in-ms
+    (let* ((duration (/ duration-in-ms 1000))
+           (hours (floor (/ duration 3600)))
+           (minutes (floor (/ (- duration (* hours 3600)) 60)))
+           (seconds (floor (- duration (* hours 3600) (* minutes 60)))))
+      (if (or always-show-hours (cl-plusp hours))
+          (format "%02d:%02d:%02d" hours minutes seconds)
+        (format "%02d:%02d" minutes seconds)))))
 
 (defun soundklaus-render-row (left right &optional width-right)
   "Render a row with a LEFT and a RIGHT part.
@@ -759,7 +605,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (let ((start (point)))
     (soundklaus-render-row
      (propertize (soundklaus-track-header track) 'face 'bold)
-     (propertize (soundklaus-track-time track) 'face 'bold))
+     (propertize (or (soundklaus-track-time track) "") 'face 'bold))
     (soundklaus-horizontal-rule)
     (soundklaus-render-row
      (format "%s plays, %s downloads, %s comments and %s favorites."
@@ -777,7 +623,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
      (propertize (concat (soundklaus-playlist-title playlist) " - "
 			 (soundklaus-playlist-username playlist))
 		 'face 'bold)
-     (propertize (soundklaus-playlist-time playlist) 'face 'bold))
+     (propertize (or (soundklaus-playlist-time playlist) "") 'face 'bold))
     (put-text-property start (point) :soundklaus-media playlist)
     (soundklaus-horizontal-rule)
     (cl-loop for n from 1 to (length (soundklaus-playlist-tracks playlist)) do
@@ -809,24 +655,6 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
      (widget-minor-mode)
      (goto-char 0)
      (soundklaus-next-media)))
-
-(defun soundklaus-next-request (request)
-  "Return the HTTP REQUEST to return the next page of a response."
-  (let* ((query-params (soundklaus-request-query-params request))
-	 (limit-alist (assoc "limit" query-params))
-	 (limit (or (cdr limit-alist) 10))
-	 (offset-alist (assoc "offset" query-params))
-	 (offset (+ (or (cdr offset-alist) 0) limit)))
-    (make-instance
-     'soundklaus-request
-     :method (soundklaus-request-method request)
-     :url (soundklaus-request-url request)
-     :query-params
-     (append (->> query-params
-	       (delq limit-alist)
-	       (delq offset-alist))
-     	     `(("limit" . ,limit)
-     	       ("offset" . ,offset))))))
 
 (defun soundklaus-parse-duration (s)
   "Parse the duration from the string S and return the number of seconds."
@@ -867,109 +695,108 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
 
 (defun soundklaus-body-as-activities (response)
   "Return the body of the HTTP RESPONSE as a list of tracks."
-  (soundklaus-make-collection (soundklaus-response-body response)))
+  (soundklaus-make-collection response))
+
+(defun soundklaus-response-collection (response)
+  "Return the collection of a paginated HTTP RESPONSE."
+  (cdr (assoc 'collection response)))
 
 (defun soundklaus-body-as-tracks (response)
   "Return the body of the HTTP RESPONSE as a list of tracks."
   (make-instance
    'soundklaus-collection
-   :content (mapcar 'soundklaus-make-track (soundklaus-response-body response))))
+   :content (mapcar 'soundklaus-make-track (soundklaus-response-collection response))))
 
 (defun soundklaus-body-as-playlists (response)
   "Return the body of the HTTP RESPONSE as a list of playlists."
   (make-instance
    'soundklaus-collection
-   :content (mapcar 'soundklaus-make-playlist (soundklaus-response-body response))))
+   :content (mapcar 'soundklaus-make-playlist (soundklaus-response-collection response))))
 
 ;;;###autoload
 (defun soundklaus-activities ()
   "List activities on SoundCloud."
   (interactive)
   (soundklaus-with-access-token
-   (let ((request (soundklaus-make-request
-		   "GET" (soundklaus-activities-url)
-		   :query-params
-		   `(("limit" . ,soundklaus-activity-limit)))))
-     (deferred:$
-       (soundklaus-request-send request)
-       (deferred:nextc it
-	 (lambda (response)
-	   (let ((collection (soundklaus-body-as-activities response)))
-	     (soundklaus-with-widget
-	      "ACTIVITIES" (soundklaus-render collection)))))))))
+   (let* ((request (soundklaus-make-request
+                    "/me/activities"
+                    :query-params
+                    `(("limit" . ,soundklaus-activity-limit)
+                      ("linked_partitioning" . 1))))
+          (response (soundklaus-send-sync-request request))
+          (collection (soundklaus-body-as-activities response)))
+     (soundklaus-with-widget
+      "ACTIVITIES" (soundklaus-render collection)))))
 
 ;;;###autoload
 (defun soundklaus-tracks (query)
   "List all tracks on SoundCloud matching QUERY."
   (interactive "MQuery: ")
-  (let ((request (soundklaus-make-request
-		  "GET" (soundklaus-tracks-url)
-		  :query-params
-		  `(("limit" . ,soundklaus-track-limit)
-		    ("q" . ,query)))))
-    (deferred:$
-      (soundklaus-request-send request)
-      (deferred:nextc it
-	(lambda (response)
-	  (let ((collection (soundklaus-body-as-tracks response)))
-	    (soundklaus-with-widget
-	     (propertize "TRACKS"
-			 :soundklaus-next (soundklaus-next-request request)
-			 :soundklaus-make 'soundklaus-make-track)
-	     (soundklaus-render collection))
-	    (soundklaus-setup-pagination)))))))
+  (let* ((request (soundklaus-make-request
+                   "/tracks"
+                   :query-params
+                   `(("limit" . ,soundklaus-track-limit)
+                     ("linked_partitioning" . 1)
+                     ("q" . ,query))))
+         (response (soundklaus-send-sync-request request))
+         (collection (soundklaus-body-as-tracks response)))
+    (soundklaus-with-widget
+     (propertize "TRACKS"
+                 :soundklaus-next (soundklaus-next-request request)
+                 :soundklaus-make 'soundklaus-make-track)
+     (soundklaus-render collection))
+    collection))
 
 ;;;###autoload
 (defun soundklaus-playlists (query)
   "List all playlists on SoundCloud matching QUERY."
   (interactive "MQuery: ")
-  (let ((request (soundklaus-make-request
-		  "GET" (soundklaus-playlists-url)
-		  :query-params
-		  `(("limit" . ,soundklaus-playlist-limit)
-		    ("q" . ,query)))))
-    (deferred:$
-      (soundklaus-request-send request)
-      (deferred:nextc it
-	(lambda (response)
-	  (let ((collection (soundklaus-body-as-playlists response)))
-	    (soundklaus-with-widget
-	     (propertize "PLAYLISTS" :soundklaus-next (soundklaus-next-request request))
-	     (soundklaus-render collection))))))))
+  (let* ((request (soundklaus-make-request
+                   "/playlists"
+                   :query-params
+                   `(("limit" . ,soundklaus-playlist-limit)
+                     ("linked_partitioning" . 1)
+                     ("q" . ,query))))
+         (response (soundklaus-send-sync-request request))
+         (collection (soundklaus-body-as-playlists response)))
+    (soundklaus-with-widget
+     (propertize "PLAYLISTS" :soundklaus-next (soundklaus-next-request request))
+     (soundklaus-render collection))
+    collection))
 
 ;;;###autoload
 (defun soundklaus-my-playlists ()
   "List your playlists on SoundCloud."
   (interactive)
   (soundklaus-with-access-token
-   (let ((request (soundklaus-make-request
-		   "GET" (soundklaus-my-playlists-url)
-		   :query-params `(("limit" . ,soundklaus-playlist-limit)))))
-     (deferred:$
-       (soundklaus-request-send request)
-       (deferred:nextc it
-	 (lambda (response)
-	   (let ((collection (soundklaus-body-as-playlists response)))
-	     (soundklaus-with-widget
-	      (propertize "MY PLAYLISTS" :soundklaus-next (soundklaus-next-request request))
-	      (soundklaus-render collection)))))))))
+   (let* ((request (soundklaus-make-request
+                    "/me/playlists"
+                    :query-params
+                    `(("limit" . ,soundklaus-playlist-limit)
+                      ("linked_partitioning" . 1))))
+          (response (soundklaus-send-sync-request request))
+          (collection (soundklaus-body-as-playlists response)))
+     (soundklaus-with-widget
+      (propertize "MY PLAYLISTS" :soundklaus-next (soundklaus-next-request request))
+      (soundklaus-render collection))
+     collection)))
 
 ;;;###autoload
 (defun soundklaus-my-tracks ()
   "List your tracks on SoundCloud."
   (interactive)
   (soundklaus-with-access-token
-   (let ((request (soundklaus-make-request
-		   "GET" (soundklaus-my-tracks-url)
-		   :query-params `(("limit" . ,soundklaus-track-limit)))))
-     (deferred:$
-       (soundklaus-request-send request)
-       (deferred:nextc it
-	 (lambda (response)
-	   (let ((collection (soundklaus-body-as-tracks response)))
-	     (soundklaus-with-widget
-	      (propertize "MY TRACKS" :soundklaus-next (soundklaus-next-request request))
-	      (soundklaus-render collection)))))))))
+   (let* ((request (soundklaus-make-request
+                    "/me/tracks"
+                    :query-params
+                    `(("limit" . ,soundklaus-track-limit)
+                      ("linked_partitioning" . 1))))
+          (response (soundklaus-send-sync-request request))
+          (collection (soundklaus-body-as-tracks response)))
+     (soundklaus-with-widget
+      (propertize "MY TRACKS" :soundklaus-next (soundklaus-next-request request))
+      (soundklaus-render collection))
+     collection)))
 
 ;;;###autoload
 (defun soundklaus-desktop-entry-save ()
