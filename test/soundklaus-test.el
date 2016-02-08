@@ -20,59 +20,6 @@
 		 :comment-count 117
 		 :favoritings-count 2287))
 
-(ert-deftest soundklaus-activities-url-test ()
-  (should (equal "https://api.soundcloud.com/me/activities"
-		 (soundklaus-activities-url))))
-
-(ert-deftest soundklaus-make-request-test ()
-  (let ((request (soundklaus-make-request :get "http://api.soundcloud.com/tracks")))
-    (should (equal :get (soundklaus-request-method request)))
-    (should (equal "http://api.soundcloud.com/tracks"
-		   (soundklaus-request-url request)))
-    (should (equal '(("Accept" . "application/json"))
-		   (soundklaus-request-headers request)))
-    (should (equal `(("client_id" . ,soundklaus-client-id)
-		     ("oauth_token" . ,soundklaus-access-token))
-		   (soundklaus-request-query-params request)))))
-
-(ert-deftest soundklaus-request-expand-url ()
-  (let ((request (soundklaus-make-request :get "http://api.soundcloud.com/tracks")))
-    (should (equal "http://api.soundcloud.com/tracks?client_id=988875d70be466a2dd1bfab120c0a306"
-		   (soundklaus-request-expand-url request)))))
-
-(ert-deftest soundklaus-my-tracks-url-test ()
-  (should (equal "https://api.soundcloud.com/me/tracks"
-		 (soundklaus-my-tracks-url))))
-
-(ert-deftest soundklaus-my-playlists-url-test ()
-  (should (equal "https://api.soundcloud.com/me/playlists"
-		 (soundklaus-my-playlists-url))))
-
-(ert-deftest soundklaus-tracks-url-test ()
-  (should (equal "https://api.soundcloud.com/tracks"
-		 (soundklaus-tracks-url))))
-
-(ert-deftest soundklaus-playlists-url-test ()
-  (should (equal "https://api.soundcloud.com/playlists"
-		 (soundklaus-playlists-url))))
-
-(ert-deftest soundklaus-next-request-test ()
-  (let* ((request (soundklaus-make-request "GET" (soundklaus-tracks-url)))
-	 (next (soundklaus-next-request request))
-	 (params (soundklaus-request-query-params next)))
-    (should (equal 10 (cdr (assoc "limit" params))))
-    (should (equal 10 (cdr (assoc "offset" params)))))
-  (let* ((request (soundklaus-make-request "GET" (soundklaus-tracks-url) :query-params '(("offset" . 10))))
-	 (next (soundklaus-next-request request))
-	 (params (soundklaus-request-query-params next)))
-    (should (equal 10 (cdr (assoc "limit" params))))
-    (should (equal 20 (cdr (assoc "offset" params)))))
-  (let* ((request (soundklaus-make-request "GET" (soundklaus-tracks-url) :query-params '(("limit" . 5) ("offset" . 20))))
-	 (next (soundklaus-next-request request))
-	 (params (soundklaus-request-query-params next)))
-    (should (equal 5 (cdr (assoc "limit" params))))
-    (should (equal 25 (cdr (assoc "offset" params))))))
-
 (ert-deftest soundklaus-remove-nil-values-test ()
   (should (equal `(("client_id" . ,soundklaus-client-id))
 		 (soundklaus-remove-nil-values
@@ -117,57 +64,6 @@
   (should (equal "01:00" (soundklaus-format-duration (* 60 1000))))
   (should (equal "00:01:00" (soundklaus-format-duration (* 60 1000) t)))
   (should (equal "01:00:00" (soundklaus-format-duration (* 60 60 1000)))))
-
-(ert-deftest soundklaus-url-encode-test ()
-  (should (equal (soundklaus-url-encode "") ""))
-  (should (equal (soundklaus-url-encode "x") "x"))
-  (should (equal (soundklaus-url-encode "=") "%3D"))
-  (should (equal (soundklaus-url-encode "a 1") "a%201"))
-  (should (equal (soundklaus-url-encode '(a-1 1)) "a-1=1"))
-  (should (equal (soundklaus-url-encode '((a 1) (b nil))) "a=1"))
-  (should (equal (soundklaus-url-encode '((a . 1) (b . nil))) "a=1"))
-  (should (equal (soundklaus-url-encode '((a-1 1) (b-2 2))) "a-1=1&b-2=2"))
-  (should (equal (soundklaus-url-encode '((a-1 . 1) (b-2 . 2))) "a-1=1&b-2=2")))
-
-(ert-deftest soundklaus-dasherize-test ()
-  (should (equal "" (soundklaus-dasherize "")))
-  (should (equal "-" (soundklaus-dasherize "-")))
-  (should (equal "-" (soundklaus-dasherize "_")))
-  (should (equal "client-id" (soundklaus-dasherize "client_id")))
-  (should (equal 'client-id (soundklaus-dasherize 'client_id)))
-  (should (equal :client-id (soundklaus-dasherize :client_id)))
-  (should (equal '(client-id . "client_id") (soundklaus-dasherize '(client_id . "client_id"))))
-  (should (equal (soundklaus-dasherize '((client_id . "client_id") ("client_secret" "client_secret")))
-                 '((client-id . "client_id") ("client-secret" "client_secret"))))
-  (let ((hash (make-hash-table)))
-    (puthash "client_id" "client-id" hash)
-    (puthash 'client_secret "client-secret" hash)
-    (puthash :grant_type "grant-type" hash)
-    (let ((hash (soundklaus-dasherize hash)))
-      (should (equal 3 (hash-table-count hash)))
-      (should (equal "client-id" (gethash "client-id" hash)))
-      (should (equal "client-secret" (gethash 'client-secret hash)))
-      (should (equal "grant-type" (gethash :grant-type hash))))))
-
-(ert-deftest soundklaus-underscore-test ()
-  (should (equal "" (soundklaus-underscore "")))
-  (should (equal "_" (soundklaus-underscore "_")))
-  (should (equal "_" (soundklaus-underscore "-")))
-  (should (equal "client_id" (soundklaus-underscore "client-id")))
-  (should (equal 'client_id (soundklaus-underscore 'client-id)))
-  (should (equal :client_id (soundklaus-underscore :client-id)))
-  (should (equal '(client_id . "client-id") (soundklaus-underscore '(client-id . "client-id"))))
-  (should (equal (soundklaus-underscore '((client-id . "client_id") ("client-secret" "client_secret")))
-                 '((client_id . "client_id") ("client_secret" "client_secret"))))
-  (let ((hash (make-hash-table)))
-    (puthash "client-id" "client-id" hash)
-    (puthash 'client-secret "client-secret" hash)
-    (puthash :grant-type "grant-type" hash)
-    (let ((hash (soundklaus-underscore hash)))
-      (should (equal 3 (hash-table-count hash)))
-      (should (equal "client-id" (gethash "client_id" hash)))
-      (should (equal "client-secret" (gethash 'client_secret hash)))
-      (should (equal "grant-type" (gethash :grant_type hash))))))
 
 (ert-deftest soundklaus-define-slot-test ()
   (should (equal (soundklaus-define-slot 'user '(permalink "The permalink of the user"))
@@ -220,10 +116,6 @@
 (ert-deftest soundklaus-path-test ()
   (should (equal "/users/8928131" (soundklaus-path soundklaus-example-user)))
   (should (equal "/tracks/40258263" (soundklaus-path soundklaus-example-track))))
-
-(ert-deftest soundklaus-url-test ()
-  (should (equal "https://api.soundcloud.com/users/8928131" (soundklaus-url soundklaus-example-user)))
-  (should (equal "https://api.soundcloud.com/tracks/40258263" (soundklaus-url soundklaus-example-track))))
 
 (ert-deftest soundklaus-parse-callback-test ()
   (let ((params (soundklaus-parse-callback
