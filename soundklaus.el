@@ -854,10 +854,10 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
     (when (> percent 80)
       (let* ((pos (next-single-property-change 1 :soundklaus-next))
 	     (next (get-text-property pos :soundklaus-next))
-	     (make (get-text-property pos :soundklaus-make)))
-	(let (pos (point))
-	  (goto-char (point-max))
-	  (widget-insert "  Loading more ..."))))))
+	     (make (get-text-property pos :soundklaus-make))
+             (pos (point)))
+	(goto-char (point-max))
+        (widget-insert "  Loading more ...")))))
 
 (defun soundklaus-setup-pagination ()
   "Setup hooks for pagination."
