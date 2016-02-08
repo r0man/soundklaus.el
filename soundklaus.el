@@ -675,6 +675,8 @@ will be underscored."
 (defun soundklaus-parse-response (buffer)
   "Parse the JSON response from BUFFER."
   (with-current-buffer buffer
+    (encode-coding-region (point-min) (point-max) 'latin-1)
+    (decode-coding-region (point-min) (point-max) 'utf-8)
     (goto-char (point-min))
     (re-search-forward "^$" nil 'move)
     (json-read)))
