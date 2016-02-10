@@ -34,7 +34,6 @@
         soundklaus-my-playlists
         soundklaus-my-tracks
         soundklaus-playlists
-        soundklaus-playlists
         soundklaus-tracks))
    #+END_SRC
 
