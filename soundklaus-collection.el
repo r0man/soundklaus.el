@@ -35,39 +35,57 @@
     :initarg :content
     :accessor soundklaus-collection-content
     :documentation "The content of the collection.")
-   (future
-    :initarg :future
-    :accessor soundklaus-collection-future
-    :documentation "The URL to the page of the collection that
-    will contain future resources of the collection.")
    (next
     :initarg :next
     :accessor soundklaus-collection-next
-    :documentation "The URL to the next page of the collection."))
+    :documentation "The URL to the next page of the collection.")
+   (item-fn
+    :initarg :item-fn
+    :accessor soundklaus-collection-item-fn
+    :documentation "The function to build an item of the collection.")
+   (request
+    :initarg :request
+    :accessor soundklaus-collection-request
+    :documentation "The request used request the collection."))
   "A collection of resources on SoundCloud.")
 
-(defun soundklaus-make-collection (assoc-list)
-  "Make a SoundCloud collection from an ASSOC-LIST."
-  (let ((collection (make-instance 'soundklaus-collection)))
-    (with-slots (content future next) collection
-      (setf future (cdr (assoc 'future_href assoc-list)))
-      (setf next (cdr (assoc 'next_href assoc-list)))
-      (setf content (delq nil (mapcar
-			       (lambda (resource)
-				 (let ((type (cdr (assoc 'type resource)))
-				       (origin (cdr (assoc 'origin resource))))
-                                   (print type)
-				   (cond
-				    ((equal type "playlist")
-				     (soundklaus-make-playlist origin))
-                                    ((equal type "playlist-repost")
-				     (soundklaus-make-playlist origin))
-				    ((equal type "track")
-				     (soundklaus-make-track origin))
-                                    ((equal type "track-repost")
-				     (soundklaus-make-track origin)))))
-			       (cdr (assoc 'collection assoc-list)))))
-      collection)))
+(defun soundklaus-make-collection (request response item-fn)
+  "Make a SoundCloud track collection from REQUEST and RESPONSE."
+  (make-instance
+   'soundklaus-collection
+   :content (delq nil (mapcar
+                       (lambda (resource)
+                         (funcall item-fn resource))
+                       (cdr (assoc 'collection response))))
+   :next (cdr (assoc 'next_href response))
+   :item-fn item-fn
+   :request request))
+
+(defun soundklaus-make-activity-item (resource)
+  "Make a SoundCloud activity item from RESOURCE."
+  (let ((type (cdr (assoc 'type resource)))
+        (origin (cdr (assoc 'origin resource))))
+    (cond
+     ((equal type "playlist")
+      (soundklaus-make-playlist origin))
+     ((equal type "playlist-repost")
+      (soundklaus-make-playlist origin))
+     ((equal type "track")
+      (soundklaus-make-track origin))
+     ((equal type "track-repost")
+      (soundklaus-make-track origin)))))
+
+(defun soundklaus-activities-collection (request response)
+  "Make a SoundCloud playlist collection from REQUEST and RESPONSE."
+  (soundklaus-make-collection request response #'soundklaus-make-activity-item))
+
+(defun soundklaus-track-collection (request response)
+  "Make a SoundCloud track collection from REQUEST and RESPONSE."
+  (soundklaus-make-collection request response #'soundklaus-make-track))
+
+(defun soundklaus-playlist-collection (request response)
+  "Make a SoundCloud playlist collection from REQUEST and RESPONSE."
+  (soundklaus-make-collection request response #'soundklaus-make-playlist))
 
 (provide 'soundklaus-collection)
 

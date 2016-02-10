@@ -103,12 +103,17 @@
     (re-search-forward "^$" nil 'move)
     (json-read)))
 
-(defun soundklaus-send-sync-request (request)
-  "Send the REQUEST."
-  (let* ((url (soundklaus-request-url request))
-         (url-request-extra-headers (soundklaus-request-headers request))
+(defun soundklaus-fetch-url (url &optional headers)
+  "Fetch the content of URL."
+  (let* ((url-request-extra-headers headers)
          (buffer (url-retrieve-synchronously url)))
     (soundklaus-parse-response buffer)))
+
+(defun soundklaus-send-sync-request (request)
+  "Send the REQUEST."
+  (soundklaus-fetch-url
+   (soundklaus-request-url request)
+   (soundklaus-request-headers request)))
 
 (defun soundklaus-next-request (request)
   "Return the HTTP REQUEST to return the next page of a response."
@@ -117,10 +122,8 @@
 	 (limit (or (cdr limit-alist) 10))
 	 (offset-alist (assoc "offset" query-params))
 	 (offset (+ (or (cdr offset-alist) 0) limit)))
-    (make-instance
-     'soundklaus-request
-     :method (soundklaus-request-method request)
-     :uri (soundklaus-request-uri request)
+    (soundklaus-make-request
+     (soundklaus-request-uri request)
      :query-params
      (append (->> query-params
                   (delq limit-alist)
