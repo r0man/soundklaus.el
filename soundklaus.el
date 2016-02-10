@@ -189,11 +189,6 @@ evaluate BODY."
       ("response_type" . "code_and_token")
       ("scope" . "non-expiring")))))
 
-(defun soundklaus-connect ()
-  "Connect with SoundCloud."
-  (interactive)
-  (browse-url (soundklaus-connect-url)))
-
 (defadvice server-visit-files (around soundklaus-detect-protocol-server activate)
   "Handle SoundCloud OAuth2 callback URLs."
   (let* ((files (mapcar (lambda (file)
@@ -346,6 +341,12 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
           (collection (soundklaus-body-as-activities response)))
      (soundklaus-with-widget
       "ACTIVITIES" (soundklaus-render collection)))))
+
+;;;###autoload
+(defun soundklaus-connect ()
+  "Connect with SoundCloud."
+  (interactive)
+  (browse-url (soundklaus-connect-url)))
 
 ;;;###autoload
 (defun soundklaus-tracks (query)
