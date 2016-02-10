@@ -1,5 +1,5 @@
-(require 'soundklaus-request)
 (require 'ert)
+(require 'soundklaus-request)
 
 (ert-deftest soundklaus-request-headers-test ()
   (let ((request (soundklaus-make-request "/tracks")))
@@ -58,3 +58,5 @@
 	 (params (soundklaus-request-query-params next)))
     (should (equal 5 (cdr (assoc "limit" params))))
     (should (equal 25 (cdr (assoc "offset" params))))))
+
+(provide 'soundklaus-request-test)

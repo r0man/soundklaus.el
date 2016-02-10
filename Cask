@@ -8,4 +8,4 @@
 (depends-on "s" "1.10.0")
 
 (development
- (depends-on "ert-runner"))
+ (depends-on "ert-runner" "0.7.0"))

@@ -47,60 +47,14 @@
 (require 'eieio)
 (require 'emms)
 (require 's)
+(require 'server)
+(require 'soundklaus-collection)
+(require 'soundklaus-custom)
+(require 'soundklaus-playlist)
 (require 'soundklaus-request)
+(require 'soundklaus-track)
+(require 'soundklaus-utils)
 (require 'widget)
-
-;; Customization
-
-(defcustom soundklaus-access-token nil
-  "The OAuth2 access token for the SoundCloud API."
-  :type 'string
-  :group 'soundklaus-mode)
-
-(defcustom soundklaus-buffer "*soundklaus*"
-  "The SoundKlaus buffer name."
-  :type 'string
-  :group 'soundklaus-mode)
-
-(defcustom soundklaus-client-id "988875d70be466a2dd1bfab120c0a306"
-  "The SoundKlaus OAuth2 client id."
-  :type 'string
-  :group 'soundklaus-mode)
-
-(defcustom soundklaus-desktop-entry "~/.local/share/applications/soundklaus.desktop"
-  "The filename of the X Window System desktop entry."
-  :type 'integer
-  :group 'soundklaus-mode)
-
-(defcustom soundklaus-download-dir "~/Music/soundcloud"
-  "The directory of the download directory."
-  :type 'string
-  :group 'soundklaus-mode)
-
-(defcustom soundklaus-redirect-url "soundklaus://oauth/callback"
-  "The SoundCloud OAuth2 redirect URL."
-  :type 'string
-  :group 'soundklaus-mode)
-
-(defcustom soundklaus-activity-limit 40
-  "The number of activities to fetch from SoundCloud at once."
-  :type 'integer
-  :group 'soundklaus-mode)
-
-(defcustom soundklaus-playlist-limit 10
-  "The number of playlists to fetch from SoundCloud at once."
-  :type 'integer
-  :group 'soundklaus-mode)
-
-(defcustom soundklaus-track-limit 40
-  "The number of tracks to fetch from SoundCloud at once."
-  :type 'integer
-  :group 'soundklaus-mode)
-
-(defcustom soundklaus-padding 2
-  "The number of columns used for padding on the left side of the buffer."
-  :type 'integer
-  :group 'soundklaus-mode)
 
 (defun soundklaus-width ()
   "Return the width of the renderable content."
@@ -108,11 +62,13 @@
 
 (defun soundklaus-horizontal-rule ()
   "Insert a horizontal rule into the buffer."
-  (widget-insert
-   (concat (make-string soundklaus-padding ?\s)
-	   (make-string (- (soundklaus-width) soundklaus-padding) ?-)
-	   (make-string soundklaus-padding ?\s)
-	   "\n")))
+  (let ((width (- (soundklaus-width) soundklaus-padding)))
+    (widget-insert
+     (concat (make-string soundklaus-padding ?\s)
+             (if (cl-plusp width)
+                 (make-string width ?-))
+             (make-string soundklaus-padding ?\s)
+             "\n"))))
 
 (defgeneric soundklaus-download (media)
   "Download the MEDIA from SoundCloud.")
@@ -136,290 +92,6 @@ evaluate BODY."
   `(if (s-blank? soundklaus-access-token)
        (message "Not authenticated with SoundCloud. Try M-x soundklaus-connect.")
      (progn ,@body)))
-
-(defun soundklaus-remove-nil-values (assoc-list)
-  "Remove all elements from ASSOC-LIST where the value is nil."
-  (delq nil (mapcar (lambda (element)
-		      (if (cdr element)
-			  element))
-		    assoc-list)))
-
-(defun soundklaus-define-slot (name attribute)
-  "Return the s-expression to define a resource slot.
-NAME is the name of the slot and ATTRIBUTE the slot options."
-  `(,(car attribute)
-    :initarg ,(intern (format ":%s" (car attribute)))
-    :accessor ,(intern (format "soundklaus-%s-%s" name (car attribute)))
-    :documentation ,(cadr attribute)))
-
-(defun soundklaus-define-class (name doc slots)
-  "Return the s-expression to define a resource class with the name NAME.
-DOC is the documentation string of the class and SLOTS a list of
-resource attributes."
-  (let ((class (intern (format "soundklaus-%s" name))))
-    `(defclass ,class ()
-       ,(mapcar (lambda (slot)
-		  (soundklaus-define-slot name slot))
-		slots)
-       ,doc)))
-
-(defun soundklaus-path-segments (path)
-  "Return the segments of PATH as a list."
-  (-remove 's-blank? (s-split "/" path)))
-
-(defun soundklaus-path-symbols (path)
-  "Return the symbols of each segment in PATH as a lists."
-  (let ((segments (soundklaus-path-segments path)))
-    (-map (lambda (segment)
-	    (-map (lambda (id)
-		    (intern (replace-regexp-in-string "^:" "" id)))
-		  (s-split "-:" segment)))
-	  (-filter (lambda (segment)
-		     (s-match ":" segment))
-		   segments))))
-
-(defun soundklaus-replace-slots (pattern slots &rest values)
-  "Interpolate PATTERN and replace each name in SLOTS with its VALUES."
-  (-reduce-from
-   (lambda (url x)
-     (s-replace (car x) (cdr x) url))
-   pattern
-   (cl-mapcan
-    (lambda (slots instance)
-      (if instance
-	  (mapcar (lambda (slot)
-		    (cons (format ":%s" slot)
-			  (format "%s" (slot-value instance slot))))
-		  slots)))
-    slots values)))
-
-(defun soundklaus-intern (name &rest args)
-  "Intern NAME in the soundklaus namespace as a symbol.
-ARGS is a list of strings appended to NAME."
-  (unless (s-blank? name)
-    (intern (apply 'format (format "soundklaus-%s" name) args))))
-
-(defun soundklaus-define-path (name pattern)
-  "Return the s-expression to define a path method of a resource.
-NAME is the name of the resource and PATTERN is used to
-interpolate the arguments passed to the generated method."
-  (let ((slots (soundklaus-path-symbols pattern))
-	(resource (cl-gensym "resource-")))
-    `(defmethod ,(soundklaus-intern "path") ((,resource ,(soundklaus-intern name)))
-       (soundklaus-replace-slots ,pattern ',slots ,resource))))
-
-(defmacro define-soundklaus-resource (name pattern doc slots)
-  "Define a SoundCloud resource with the name NAME.
-PATTERN is is used to build the path to the resource, DOC is the
-documentation string, and SLOTS the attributes of the resource."
-  `(progn
-     ,(soundklaus-define-class name doc slots)
-     ,(soundklaus-define-path name pattern)))
-
-;; User: https://developers.soundcloud.com/docs/api/reference#users
-
-(define-soundklaus-resource user "/users/:id"
-  "A SoundCloud user"
-  ((id "The id of the user")
-   (username "The short name of the user")
-   (city "The city of the user")
-   (country "The country of the user")
-   (full-name "The full name of the user")
-   (track-count "The number of public tracks of the user")
-   (playlist-count "The number of public playlists of the user")
-   (public-favorites-count "The number of public favorites of the user")
-   (followings-count "The number of followings of the user")
-   (followers-count "The number of followers of the user")))
-
-;; Track: https://developers.soundcloud.com/docs/api/reference#tracks
-
-(define-soundklaus-resource track "/tracks/:id"
-  "A SoundCloud track"
-  ((id "The id of the track")
-   (user "The minimal representation of the track owner")
-   (title "The title of the track")
-   (stream-url "The link the 128kbs MP3 stream of the track")
-   (duration "The duration of the track in milliseconds")
-   (genre "The music genre of the track")
-   (artwork-url "The URL of the track artwork")
-   (playback-count "The play count of the track")
-   (download-count "The download count of the track")
-   (comment-count "The number of comments of the track")
-   (favoritings-count "The number of time the track has been favorited")))
-
-;; Playlist: https://developers.soundcloud.com/docs/api/reference#playlists
-
-(define-soundklaus-resource playlist "/playlists/:id"
-  "A SoundCloud playlist"
-  ((id "The id of the playlist")
-   (user "The minimal representation of the playlist owner")
-   (title "The title of the playlist")
-   (tracks "The tracks of the  playlist")
-   (duration "The duration of the playlist in milliseconds")))
-
-;; Resource collection
-
-(defclass soundklaus-collection ()
-  ((content
-    :initarg :content
-    :accessor soundklaus-collection-content
-    :documentation "The content of the collection.")
-   (future
-    :initarg :future
-    :accessor soundklaus-collection-future
-    :documentation "The URL to the page of the collection that
-    will contain future resources of the collection.")
-   (next
-    :initarg :next
-    :accessor soundklaus-collection-next
-    :documentation "The URL to the next page of the collection."))
-  "A collection of resources on SoundCloud.")
-
-(defun soundklaus-make-collection (assoc-list)
-  "Make a SoundCloud collection from an ASSOC-LIST."
-  (let ((collection (make-instance 'soundklaus-collection)))
-    (with-slots (content future next) collection
-      (setf future (cdr (assoc 'future_href assoc-list)))
-      (setf next (cdr (assoc 'next_href assoc-list)))
-      (setf content (delq nil (mapcar
-			       (lambda (resource)
-				 (let ((type (cdr (assoc 'type resource)))
-				       (origin (cdr (assoc 'origin resource))))
-				   (cond
-				    ((equal type "playlist")
-				     (soundklaus-make-playlist origin))
-				    ((equal type "track")
-				     (soundklaus-make-track origin)))))
-			       (cdr (assoc 'collection assoc-list)))))
-      collection)))
-
-;; EMMS Sources
-
-(define-emms-source soundklaus-track (track)
-  "An EMMS source for a SoundCloud TRACK."
-  (let ((emms-track (emms-track 'url (soundklaus-track-stream-url track))))
-    (emms-track-set emms-track 'info-title (soundklaus-track-title track))
-    (emms-track-set emms-track 'info-playing-time (soundklaus-track-duration-secs track))
-    (emms-playlist-insert-track emms-track)))
-
-(define-emms-source soundklaus-playlist (playlist)
-  "An EMMS source for a SoundCloud PLAYLIST."
-  (mapc 'emms-insert-soundklaus-track
-        (soundklaus-playlist-tracks playlist)))
-
-(defun soundklaus-make-user (assoc-list)
-  "Make a SoundCloud user instance from an ASSOC-LIST."
-  (let ((instance (soundklaus-slurp-instance 'soundklaus-user assoc-list)))
-    instance))
-
-(defun soundklaus-make-track (assoc-list)
-  "Make a SoundCloud track instance from ASSOC-LIST."
-  (let ((instance (soundklaus-slurp-instance 'soundklaus-track assoc-list)))
-    (with-slots (user playback-count download-count comment-count favoritings-count) instance
-      (setf user (soundklaus-make-user user))
-      (setf playback-count (or playback-count 0))
-      (setf download-count (or download-count 0))
-      (setf comment-count (or comment-count 0))
-      (setf favoritings-count (or favoritings-count 0))
-      instance)))
-
-(defun soundklaus-make-playlist (assoc-list)
-  "Make a SoundCloud playlist instance from ASSOC-LIST."
-  (let ((instance (soundklaus-slurp-instance 'soundklaus-playlist assoc-list)))
-    (with-slots (user tracks) instance
-      (setf user (soundklaus-make-user user))
-      (setf tracks (mapcar 'soundklaus-make-track tracks))
-      instance)))
-
-(defun soundklaus-url-encode (params)
-  "Return a URL encoded string of the PARAMS.
-PARAMS can be a number, string, symbol or an association list and
-the elements are joined with the ampersand character."
-  (cond
-   ((stringp params)
-    (url-hexify-string params))
-   ((symbolp params)
-    (intern (soundklaus-url-encode (symbol-name params))))
-   ((listp params)
-    (if (listp (car params))
-        (s-join "&" (delq nil (mapcar 'soundklaus-url-encode params)))
-      (let ((value (if (atom (cdr params))
-		       (cdr params)
-		     (cadr params))))
-	(if value
-	    (format "%s=%s"
-		    (soundklaus-url-encode (car params))
-		    (soundklaus-url-encode value))))))
-   (t (url-hexify-string (format "%s" params)))))
-
-(defun soundklaus-safe-path (path)
-  "Return the safe name of PATH."
-  (let* ((path (replace-regexp-in-string "[^0-9A-Za-z]+" "-" path))
-	 (path (replace-regexp-in-string "^-" "" path))
-	 (path (replace-regexp-in-string "-$" "" path)))
-    (downcase path)))
-
-(defun soundklaus-track-duration-secs (track)
-  "Return the duration of TRACK in seconds."
-  (/ (soundklaus-track-duration track) 1000))
-
-(defun soundklaus-track-download-filename (track)
-  "Return the download filename for TRACK."
-  (expand-file-name
-   (concat (file-name-as-directory soundklaus-download-dir)
-	   (file-name-as-directory (soundklaus-safe-path (soundklaus-track-username track)))
-	   (concat (soundklaus-safe-path (soundklaus-track-title track)) ".mp3"))))
-
-(defun soundklaus-playlist-download-directory (playlist)
-  "Return the download directory for PLAYLIST."
-  (expand-file-name
-   (concat (file-name-as-directory soundklaus-download-dir)
-  	   (file-name-as-directory (soundklaus-safe-path (soundklaus-playlist-username playlist)))
-  	   (soundklaus-safe-path (soundklaus-playlist-title playlist)))))
-
-(defun soundklaus-playlist-track-download-filename (playlist track n)
-  "Return the download filename of a song in the PLAYLIST.
-TRACK is song number N."
-  (expand-file-name
-   (concat (file-name-as-directory (soundklaus-playlist-download-directory playlist))
-	   (format "%02d-%s.mp3" n (soundklaus-safe-path (soundklaus-track-title track))))))
-
-(defun soundklaus-track-header (track)
-  "Return the TRACK header as a string."
-  (concat (soundklaus-track-title track) " - "
-	  (soundklaus-track-username track)))
-
-(defun soundklaus-track-stream-url (track)
-  "Return the stream URL of TRACK."
-  (concat (slot-value track 'stream-url) "?"
-	  (soundklaus-url-encode
-	   (soundklaus-remove-nil-values
-	    `(("client_id" . ,soundklaus-client-id)
-	      ("oauth_token" . ,soundklaus-access-token))))))
-
-(defun soundklaus-track-time (track)
-  "Return the TRACK duration formatted as HH:MM:SS."
-  (soundklaus-format-duration (soundklaus-track-duration track)))
-
-(defun soundklaus-track-username (track)
-  "Return the username of TRACK."
-  (soundklaus-user-username (soundklaus-track-user track)))
-
-(defun soundklaus-playlist-time (playlist)
-  "Return the PLAYLIST duration formatted as HH:MM:SS."
-  (soundklaus-format-duration (soundklaus-playlist-duration playlist)))
-
-(defun soundklaus-playlist-username (playlist)
-  "Return the username of PLAYLIST."
-  (soundklaus-user-username (soundklaus-playlist-user playlist)))
-
-(defun soundklaus-tag-track (track)
-  "Tag the SoundCloud TRACK."
-  (let ((filename (soundklaus-track-download-filename track)))
-    (shell-command (format "mp3info -d %s" (shell-quote-argument filename)))
-    (shell-command (format "mp3info -t %s %s"
-			   (shell-quote-argument (soundklaus-track-title track))
-			   (shell-quote-argument filename)))))
 
 (defmethod soundklaus-download ((media soundklaus-track))
   (let ((url (soundklaus-track-stream-url media))
@@ -522,24 +194,6 @@ TRACK is song number N."
   (interactive)
   (browse-url (soundklaus-connect-url)))
 
-(defun soundklaus-parse-callback (url)
-  "Parse the code, token and scope from the OAuth2 callback URL."
-  (condition-case nil
-      (with-temp-buffer
-	(let ((pattern (replace-regexp-in-string "://" ":/" soundklaus-redirect-url)))
-	  (insert url)
-	  (beginning-of-buffer)
-	  (search-forward pattern)
-	  (let ((url (url-generic-parse-url
-		      (buffer-substring
-		       (- (point) (length pattern))
-		       (point-max)))))
-	    (append (if (url-target url)
-			(url-parse-query-string (url-target url)))
-		    (if (url-path-and-query url)
-			(url-parse-query-string (cdr (url-path-and-query url))))))))
-    (error nil)))
-
 (defadvice server-visit-files (around soundklaus-detect-protocol-server activate)
   "Handle SoundCloud OAuth2 callback URLs."
   (let* ((files (mapcar (lambda (file)
@@ -561,27 +215,6 @@ TRACK is song number N."
     (when (not (null files))
       (ad-set-arg 0 files)
       ad-do-it)))
-
-(defun soundklaus-slurp-instance (class assoc-list)
-  "Make an instance of CLASS and initialize it's slots from the ASSOC-LIST."
-  (let ((instance (make-instance class)))
-    (mapc (lambda (slot)
-	    (let* ((key (soundklaus-underscore slot))
-		   (value (cdr (assoc key assoc-list))))
-	      (set-slot-value instance slot value)))
-	  (object-slots instance))
-    instance))
-
-(defun soundklaus-format-duration (duration-in-ms &optional always-show-hours)
-  "Format DURATION-IN-MS in the HH:MM:SS format."
-  (when duration-in-ms
-    (let* ((duration (/ duration-in-ms 1000))
-           (hours (floor (/ duration 3600)))
-           (minutes (floor (/ (- duration (* hours 3600)) 60)))
-           (seconds (floor (- duration (* hours 3600) (* minutes 60)))))
-      (if (or always-show-hours (cl-plusp hours))
-          (format "%02d:%02d:%02d" hours minutes seconds)
-        (format "%02d:%02d" minutes seconds)))))
 
 (defun soundklaus-render-row (left right &optional width-right)
   "Render a row with a LEFT and a RIGHT part.
@@ -618,7 +251,8 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
     (widget-insert "\n")))
 
 (defmethod soundklaus-render ((playlist soundklaus-playlist))
-  (let ((start (point)))
+  (let* ((playlist (soundklaus-playlist-fetch playlist))
+         (start (point)))
     (soundklaus-render-row
      (propertize (concat (soundklaus-playlist-title playlist) " - "
 			 (soundklaus-playlist-username playlist))
@@ -639,7 +273,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (mapcar 'soundklaus-render (soundklaus-collection-content collection)))
 
 (defmacro soundklaus-with-widget (title &rest body)
-  "Evaluate BODY with in the context of the SoundCloud widget buffer."
+  "Render a widget with TITLE and evaluate BODY."
   `(progn
      (set-buffer (get-buffer-create soundklaus-buffer))
      (switch-to-buffer-other-window soundklaus-buffer)
@@ -654,23 +288,8 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
      (soundklaus-mode)
      (widget-minor-mode)
      (goto-char 0)
-     (soundklaus-next-media)))
-
-(defun soundklaus-parse-duration (s)
-  "Parse the duration from the string S and return the number of seconds."
-  (let ((tokens `(("s" . ,1)
-		  ("m" . ,60)
-		  ("h" . ,(* 60 60))
-		  ("d" . ,(* 60 60 24)))))
-    (-reduce-from
-     (lambda (memo s)
-       (let* ((matches (s-match "\\([[:digit:]]+\\)\\([smhd]\\)" s))
-	      (multiplicator (cdr (assoc (elt matches 2) tokens))))
-	 (if multiplicator
-	     (+ memo (* (string-to-number (elt matches 1))
-			multiplicator))
-	   memo)))
-     0 (s-split-words s))))
+     (soundklaus-next-media)
+     (read-only-mode)))
 
 (defun soundklaus-seek-to (duration)
   "Seek the current player to DURATION."
@@ -756,7 +375,8 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
                    :query-params
                    `(("limit" . ,soundklaus-playlist-limit)
                      ("linked_partitioning" . 1)
-                     ("q" . ,query))))
+                     ("q" . ,query)
+                     ("representation" . "id"))))
          (response (soundklaus-send-sync-request request))
          (collection (soundklaus-body-as-playlists response)))
     (soundklaus-with-widget

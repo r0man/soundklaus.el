@@ -29,6 +29,17 @@
 (require 'url-util)
 (require 's)
 
+(defun soundklaus-format-duration (duration-in-ms &optional always-show-hours)
+  "Format DURATION-IN-MS in the HH:MM:SS format."
+  (when duration-in-ms
+    (let* ((duration (/ duration-in-ms 1000))
+           (hours (floor (/ duration 3600)))
+           (minutes (floor (/ (- duration (* hours 3600)) 60)))
+           (seconds (floor (- duration (* hours 3600) (* minutes 60)))))
+      (if (or always-show-hours (cl-plusp hours))
+          (format "%02d:%02d:%02d" hours minutes seconds)
+        (format "%02d:%02d" minutes seconds)))))
+
 (defun soundklaus-transform (arg transform-fn)
   "Transform ARG with the transformation function TRANSFORM-FN.
 ARG can be an assoc list, hash table, string or a symbol.  If ARG
@@ -83,6 +94,85 @@ the elements are joined with the ampersand character."
 		    (soundklaus-url-encode (car params))
 		    (soundklaus-url-encode value))))))
    (t (url-hexify-string (format "%s" params)))))
+
+(defun soundklaus-slurp-instance (class assoc-list)
+  "Make an instance of CLASS and initialize it's slots from the ASSOC-LIST."
+  (let ((instance (make-instance class)))
+    (mapc (lambda (slot)
+	    (let* ((key (soundklaus-underscore slot))
+		   (value (cdr (assoc key assoc-list))))
+	      (set-slot-value instance slot value)))
+	  (object-slots instance))
+    instance))
+
+(defun soundklaus-remove-nil-values (assoc-list)
+  "Remove all elements from ASSOC-LIST where the value is nil."
+  (delq nil (mapcar (lambda (element)
+		      (if (cdr element)
+			  element))
+		    assoc-list)))
+
+(defun soundklaus-url-encode (params)
+  "Return a URL encoded string of the PARAMS.
+PARAMS can be a number, string, symbol or an association list and
+the elements are joined with the ampersand character."
+  (cond
+   ((stringp params)
+    (url-hexify-string params))
+   ((symbolp params)
+    (intern (soundklaus-url-encode (symbol-name params))))
+   ((listp params)
+    (if (listp (car params))
+        (s-join "&" (delq nil (mapcar 'soundklaus-url-encode params)))
+      (let ((value (if (atom (cdr params))
+		       (cdr params)
+		     (cadr params))))
+	(if value
+	    (format "%s=%s"
+		    (soundklaus-url-encode (car params))
+		    (soundklaus-url-encode value))))))
+   (t (url-hexify-string (format "%s" params)))))
+
+(defun soundklaus-safe-path (path)
+  "Return the safe name of PATH."
+  (let* ((path (replace-regexp-in-string "[^0-9A-Za-z]+" "-" path))
+	 (path (replace-regexp-in-string "^-" "" path))
+	 (path (replace-regexp-in-string "-$" "" path)))
+    (downcase path)))
+
+(defun soundklaus-parse-callback (url)
+  "Parse the code, token and scope from the OAuth2 callback URL."
+  (condition-case nil
+      (with-temp-buffer
+	(let ((pattern (replace-regexp-in-string "://" ":/" soundklaus-redirect-url)))
+	  (insert url)
+	  (beginning-of-buffer)
+	  (search-forward pattern)
+	  (let ((url (url-generic-parse-url
+		      (buffer-substring
+		       (- (point) (length pattern))
+		       (point-max)))))
+	    (append (if (url-target url)
+			(url-parse-query-string (url-target url)))
+		    (if (url-path-and-query url)
+			(url-parse-query-string (cdr (url-path-and-query url))))))))
+    (error nil)))
+
+(defun soundklaus-parse-duration (s)
+  "Parse the duration from the string S and return the number of seconds."
+  (let ((tokens `(("s" . ,1)
+		  ("m" . ,60)
+		  ("h" . ,(* 60 60))
+		  ("d" . ,(* 60 60 24)))))
+    (-reduce-from
+     (lambda (memo s)
+       (let* ((matches (s-match "\\([[:digit:]]+\\)\\([smhd]\\)" s))
+	      (multiplicator (cdr (assoc (elt matches 2) tokens))))
+	 (if multiplicator
+	     (+ memo (* (string-to-number (elt matches 1))
+			multiplicator))
+	   memo)))
+     0 (s-split-words s))))
 
 (provide 'soundklaus-utils)
 
