@@ -23,7 +23,7 @@
    =M-x package-install [RET] soundklaus [RET]=
 
    If you are using [[https://github.com/jwiegley/use-package][use-package]] to manage your [[http://www.gnu.org/software/emacs/][Emacs]] packages, you can
-   install and load /soundklaus.el/ with the following code:
+   install and autoload /soundklaus.el/ with the following code:
 
    #+BEGIN_SRC emacs-lisp
      (use-package soundklaus
