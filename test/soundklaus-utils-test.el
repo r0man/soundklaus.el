@@ -1,5 +1,22 @@
+(require 'soundklaus)
+(require 'soundklaus-custom)
 (require 'soundklaus-utils)
 (require 'ert)
+
+(ert-deftest soundklaus-format-duration-test ()
+  (should (equal "00:00" (soundklaus-format-duration 0)))
+  (should (equal "00:00:00" (soundklaus-format-duration 0 t)))
+  (should (equal "00:01" (soundklaus-format-duration 1000)))
+  (should (equal "00:00:01" (soundklaus-format-duration 1000 t)))
+  (should (equal "01:00" (soundklaus-format-duration (* 60 1000))))
+  (should (equal "00:01:00" (soundklaus-format-duration (* 60 1000) t)))
+  (should (equal "01:00:00" (soundklaus-format-duration (* 60 60 1000)))))
+
+(ert-deftest soundklaus-remove-nil-values-test ()
+  (should (equal (soundklaus-remove-nil-values
+		  `(("client_id" . "SOUNDCLOUD-CLIENT-ID")
+		    ("oauth_token" . nil)))
+                 `(("client_id" . "SOUNDCLOUD-CLIENT-ID")))))
 
 (ert-deftest soundklaus-url-encode-test ()
   (should (equal (soundklaus-url-encode "") ""))
@@ -51,3 +68,30 @@
       (should (equal "client-id" (gethash "client_id" hash)))
       (should (equal "client-secret" (gethash 'client_secret hash)))
       (should (equal "grant-type" (gethash :grant_type hash))))))
+
+(ert-deftest soundklaus-parse-callback-test ()
+  (let ((params (soundklaus-parse-callback
+		 (concat "/home/roman/soundklaus:/oauth/callback?"
+			 "code=eabab65ccb58206eaeff6f11e1cb29e4#"
+			 "access_token=1-82657-450979-f92c55f37ce760776&"
+			 "scope=non-expiring"))))
+    (should (equal "eabab65ccb58206eaeff6f11e1cb29e4" (cadr (assoc "code" params))))
+    (should (equal "1-82657-450979-f92c55f37ce760776" (cadr (assoc "access_token" params))))
+    (should (equal "non-expiring" (cadr (assoc "scope" params)))))
+  (let ((params (soundklaus-parse-callback
+		 (concat "/home/roman/soundklaus:/oauth/callback?"
+			 "error=access_denied&"
+			 "error_description=The+end-user+denied+the+request"))))
+    (should (equal "access_denied" (cadr (assoc "error" params))))
+    (should (equal "The+end-user+denied+the+request" (cadr (assoc "error_description" params))))))
+
+(ert-deftest soundklaus-parse-duration ()
+  (should (equal 0 (soundklaus-parse-duration "0s")))
+  (should (equal 1 (soundklaus-parse-duration "1s")))
+  (should (equal 60 (soundklaus-parse-duration "1m")))
+  (should (equal 3600 (soundklaus-parse-duration "1h")))
+  (should (equal 16200 (soundklaus-parse-duration "4h 30m")))
+  (should (equal 100800 (soundklaus-parse-duration "1d 4h")))
+  (should (equal 60 (soundklaus-parse-duration "1m garbage"))))
+
+(provide 'soundklaus-utils-test)
