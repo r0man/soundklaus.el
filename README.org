@@ -1,55 +1,55 @@
 * soundklaus.el
 
-[[https://travis-ci.org/r0man/soundklaus.el][https://travis-ci.org/r0man/soundklaus.el.svg]]
-[[https://melpa.org/#/soundklaus][https://melpa.org/packages/soundklaus-badge.svg]]
+  [[https://travis-ci.org/r0man/soundklaus.el][https://travis-ci.org/r0man/soundklaus.el.svg]]
+  [[https://melpa.org/#/soundklaus][https://melpa.org/packages/soundklaus-badge.svg]]
 
-Play [[https://soundcloud.com][SoundCloud]] music in [[http://www.gnu.org/software/emacs/][Emacs]] via [[http://www.gnu.org/software/emms][EMMS]].
+  Play [[https://soundcloud.com][SoundCloud]] music in [[http://www.gnu.org/software/emacs/][Emacs]] via [[http://www.gnu.org/software/emms][EMMS]].
 
-[[http://imgs.xkcd.com/comics/techno.png]]
+  [[http://imgs.xkcd.com/comics/techno.png]]
 
 ** Prerequisites
 
-This mode requires [[http://www.gnu.org/software/emacs/][Emacs]] 24. Other required dependencies are [[http://curl.haxx.se][curl]] to
-stream tracks, [[http://ibiblio.org/mp3info][mp3info]] to tag them, and a music player that is
-supported by /EMMS/. [[http://www.musicpd.org][Music Player Daemon]] is known to work out of the
-box, [[http://www.videolan.org][VLC Media Player]] after some tweaking.
+   This mode requires [[http://www.gnu.org/software/emacs/][Emacs]] 24. Other required dependencies are [[http://curl.haxx.se][curl]] to
+   stream tracks, [[http://ibiblio.org/mp3info][mp3info]] to tag them, and a music player that is
+   supported by /EMMS/. [[http://www.musicpd.org][Music Player Daemon]] is known to work out of the
+   box, [[http://www.videolan.org][VLC Media Player]] after some tweaking.
 
 ** Installation
 
-/soundklaus.el/ is available on [[http://melpa.milkbox.net][MELPA]].  Instructions on how to
-configure /MELPA/ can be found [[http://melpa.milkbox.net/#/getting-started][here]]. After configuring /MELPA/ you can
-install /soundklaus.el/ with the following command:
+   /soundklaus.el/ is available on [[http://melpa.milkbox.net][MELPA]].  Instructions on how to
+   configure /MELPA/ can be found [[http://melpa.milkbox.net/#/getting-started][here]]. After configuring /MELPA/ you can
+   install /soundklaus.el/ with the following command:
 
-=M-x package-install [RET] soundklaus [RET]=
+   =M-x package-install [RET] soundklaus [RET]=
 
 ** Configuration
 
-This mode requires a working [[http://www.gnu.org/software/emms][EMMS]] setup for Emacs. The following code
-from the /EMMS/ [[http://www.gnu.org/software/emms/quickstart.html][Quick-Start Guide]] should work with some minor tweaks.
+   This mode requires a working [[http://www.gnu.org/software/emms][EMMS]] setup for Emacs. The following code
+   from the /EMMS/ [[http://www.gnu.org/software/emms/quickstart.html][Quick-Start Guide]] should work with some minor tweaks.
 
-#+BEGIN_SRC emacs-lisp
+   #+BEGIN_SRC emacs-lisp
     (require 'emms-setup)
     (emms-standard)
     (emms-default-players)
-#+END_SRC
+   #+END_SRC
 
 *** Music Player Daemon
 
-If you are using the [[http://www.musicpd.org][Music Player Daemon]] everything should work out of
-the box after adding the player to the list of /EMMS/ players.
+    If you are using the [[http://www.musicpd.org][Music Player Daemon]] everything should work out of
+    the box after adding the player to the list of /EMMS/ players.
 
-#+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp
     (require 'emms-player-mpd)
     (add-to-list 'emms-player-list 'emms-player-mpd)
-#+END_SRC
+    #+END_SRC
 
 *** VLC Media Player
 
-The default configuration of the [[http://www.videolan.org][VLC Media Player]] that ships with
-/EMMS/ doesn't support HTTPS. This can be fixed by changing the
-regular expression of the player.
+    The default configuration of the [[http://www.videolan.org][VLC Media Player]] that ships with
+    /EMMS/ doesn't support HTTPS. This can be fixed by changing the
+    regular expression of the player.
 
-#+BEGIN_SRC emacs-lisp
+    #+BEGIN_SRC emacs-lisp
     (require 'emms-player-vlc)
     (define-emms-simple-player vlc '(file url)
       (concat "\\`\\(https?\\|mms\\)://\\|"
@@ -58,38 +58,38 @@ regular expression of the player.
            "mov" "avi" "divx" "ogm" "ogv" "asf" "mkv"
            "rm" "rmvb" "mp4" "flac" "vob" "m4a" "ape"))
       "vlc" "--intf=rc")
-#+END_SRC
+    #+END_SRC
 
 *** MPlayer
 
-[[http://www.mplayerhq.hu][MPlayer]] can't follow redirect links when playing streams. This is
-currently required by /soundklaus.el/, so /MPlayer/ is not supported
-at the moment.
+    [[http://www.mplayerhq.hu][MPlayer]] can't follow redirect links when playing streams. This is
+    currently required by /soundklaus.el/, so /MPlayer/ is not supported
+    at the moment.
 
 ** Usage
 
-You can search songs with =M-x soundklaus-tracks= and playlists with
-=M-x soundklaus-playlists=. Your own tracks and playlists are
-available with =M-x soundklaus-my-tracks= and =M-x
-soundklaus-my-playlists=. In the =*soundklaus*= buffer you can move to
-the next song with =C-n= or =n=, and to the previous one with =C-p= or
-=p=. Pressing =RET= plays the current song, and =a= adds the current
-song at point to the /EMMS/ playlist. All other available key bindings
-can be seen with =M-x describe-minor-mode [RET] soundklaus-mode=.
+   You can search songs with =M-x soundklaus-tracks= and playlists with
+   =M-x soundklaus-playlists=. Your own tracks and playlists are
+   available with =M-x soundklaus-my-tracks= and =M-x
+   soundklaus-my-playlists=. In the =*soundklaus*= buffer you can move to
+   the next song with =C-n= or =n=, and to the previous one with =C-p= or
+   =p=. Pressing =RET= plays the current song, and =a= adds the current
+   song at point to the /EMMS/ playlist. All other available key bindings
+   can be seen with =M-x describe-minor-mode [RET] soundklaus-mode=.
 
 ** Authentication
 
-Some commands like =M-x soundklaus-activities= or =M-x
-soundklaus-my-tracks= need access to your /SoundCloud/ account. Your
-web browser should open Emacs via =emacsclient= for the [[http://oauth.net/2][OAuth2]]
-callback URL =soundklaus://oauth/callback=.
+   Some commands like =M-x soundklaus-activities= or =M-x
+   soundklaus-my-tracks= need access to your /SoundCloud/ account. Your
+   web browser should open Emacs via =emacsclient= for the [[http://oauth.net/2][OAuth2]]
+   callback URL =soundklaus://oauth/callback=.
 
-On a Linux system you can configure this by running =M-x
-soundklaus-desktop-entry-save=. This will write the following content
-to the =~/.local/share/applications/soundklaus.desktop= file in your
-home directory.
+   On a Linux system you can configure this by running =M-x
+   soundklaus-desktop-entry-save=. This will write the following content
+   to the =~/.local/share/applications/soundklaus.desktop= file in your
+   home directory.
 
-#+BEGIN_EXAMPLE
+   #+BEGIN_EXAMPLE
     [Desktop Entry]
     Name=SoundKlaus
     Exec=emacsclient %u
@@ -97,13 +97,13 @@ home directory.
     Type=Application
     Terminal=false
     MimeType=x-scheme-handler/soundklaus;
-#+END_EXAMPLE
+   #+END_EXAMPLE
 
-To setup this functionality on other operating systems take a look at
-the [[http://orgmode.org/worg/org-contrib/org-protocol.html#sec-3][system setup]] section in [[http://orgmode.org/worg/org-contrib/org-protocol.html][org-protocol.el]] and adapt it for
-/soundklaus.el/.
+   To setup this functionality on other operating systems take a look at
+   the [[http://orgmode.org/worg/org-contrib/org-protocol.html#sec-3][system setup]] section in [[http://orgmode.org/worg/org-contrib/org-protocol.html][org-protocol.el]] and adapt it for
+   /soundklaus.el/.
 
-In detail what should be done is this:
+   In detail what should be done is this:
 
 -  Make sure emacs runs as a server or as a deamon (because we use
    emacsclient for this)
@@ -135,13 +135,13 @@ future sessions.
 
 ** Screenshot
 
-[[https://raw.githubusercontent.com/r0man/soundklaus.el/master/screenshot.jpg]]
+   [[https://raw.githubusercontent.com/r0man/soundklaus.el/master/screenshot.jpg]]
 
 ** License
 
-Copyright © 2014-2016 [[https://github.com/r0man][r0man]]
+   Copyright © 2014-2016 [[https://github.com/r0man][r0man]]
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 3, or (at your option)
-any later version.
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 3, or (at your option)
+   any later version.
