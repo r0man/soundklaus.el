@@ -9,10 +9,10 @@
 
 ** Prerequisites
 
-   This mode requires [[http://www.gnu.org/software/emacs/][Emacs]] 24. Other required dependencies are [[http://curl.haxx.se][curl]] to
-   stream tracks, [[http://ibiblio.org/mp3info][mp3info]] to tag them, and a music player that is
-   supported by /EMMS/. [[http://www.musicpd.org][Music Player Daemon]] is known to work out of the
-   box, [[http://www.videolan.org][VLC Media Player]] after some tweaking.
+   This mode requires [[http://www.gnu.org/software/emacs/][Emacs]] 24, [[http://curl.haxx.se][curl]] to stream tracks, [[http://ibiblio.org/mp3info][mp3info]] to tag
+   them, and a music player that is supported by /EMMS/. [[http://www.musicpd.org][Music Player
+   Daemon]], [[https://www.mplayerhq.hu/design7/news.html][MPlayer]] and [[http://www.videolan.org][VLC Media Player]] are known to work with
+   /soundklaus.el/.
 
 ** Installation
 
@@ -39,47 +39,14 @@
 
 ** Configuration
 
-   This mode requires a working [[http://www.gnu.org/software/emms][EMMS]] setup for Emacs. The following code
-   from the /EMMS/ [[http://www.gnu.org/software/emms/quickstart.html][Quick-Start Guide]] should work with some minor tweaks.
+   This mode requires a working [[http://www.gnu.org/software/emms][EMMS]] setup for Emacs. The following
+   code from the /EMMS/ [[http://www.gnu.org/software/emms/quickstart.html][Quick-Start Guide]] should get you started.
 
    #+BEGIN_SRC emacs-lisp
-    (require 'emms-setup)
-    (emms-standard)
-    (emms-default-players)
+     (require 'emms-setup)
+     (emms-standard)
+     (emms-default-players)
    #+END_SRC
-
-*** Music Player Daemon
-
-    If you are using the [[http://www.musicpd.org][Music Player Daemon]] everything should work out of
-    the box after adding the player to the list of /EMMS/ players.
-
-    #+BEGIN_SRC emacs-lisp
-    (require 'emms-player-mpd)
-    (add-to-list 'emms-player-list 'emms-player-mpd)
-    #+END_SRC
-
-*** VLC Media Player
-
-    The default configuration of the [[http://www.videolan.org][VLC Media Player]] that ships with
-    /EMMS/ doesn't support HTTPS. This can be fixed by changing the
-    regular expression of the player.
-
-    #+BEGIN_SRC emacs-lisp
-    (require 'emms-player-vlc)
-    (define-emms-simple-player vlc '(file url)
-      (concat "\\`\\(https?\\|mms\\)://\\|"
-          (emms-player-simple-regexp
-           "ogg" "mp3" "wav" "mpg" "mpeg" "wmv" "wma"
-           "mov" "avi" "divx" "ogm" "ogv" "asf" "mkv"
-           "rm" "rmvb" "mp4" "flac" "vob" "m4a" "ape"))
-      "vlc" "--intf=rc")
-    #+END_SRC
-
-*** MPlayer
-
-    [[http://www.mplayerhq.hu][MPlayer]] can't follow redirect links when playing streams. This is
-    currently required by /soundklaus.el/, so /MPlayer/ is not supported
-    at the moment.
 
 ** Usage
 
@@ -120,33 +87,33 @@
 
    In detail what should be done is this:
 
--  Make sure emacs runs as a server or as a deamon (because we use
-   emacsclient for this)
--  Run these commands (some gnome utils may be necessary for them).
-   Assuming emacs is in /usr/bin/emacsclient in anycase, replace with
-   whatever =$ which emacs= gives you.
+   -  Make sure emacs runs as a server or as a deamon (because we use
+     emacsclient for this)
+   -  Run these commands (some gnome utils may be necessary for them).
+     Assuming emacs is in /usr/bin/emacsclient in anycase, replace with
+     whatever =$ which emacs= gives you.
 
-   #+BEGIN_EXAMPLE
-       $ gconftool-2 -s /desktop/gnome/url-handlers/soundklaus/command '/usr/bin/emacsclient %s' --type String
-       $ gconftool-2 -s /desktop/gnome/url-handlers/soundklaus/enabled --type Boolean true
-   #+END_EXAMPLE
+     #+BEGIN_EXAMPLE
+          $ gconftool-2 -s /desktop/gnome/url-handlers/soundklaus/command '/usr/bin/emacsclient %s' --type String
+          $ gconftool-2 -s /desktop/gnome/url-handlers/soundklaus/enabled --type Boolean true
+     #+END_EXAMPLE
 
--  Use firefox for this and add a new protocol handler with
-   [[this%20guide%20on%20registering%20new%20protocols][http://kb.mozillazine.org/Register\_protocol#Linux]].  Remember to
-   change foo with soundklaus
--  Add this line to /usr/share/applications/defaults.list
+   -  Use firefox for this and add a new protocol handler with
+     [[this%20guide%20on%20registering%20new%20protocols][http://kb.mozillazine.org/Register\_protocol#Linux]].  Remember to
+     change foo with soundklaus
+   -  Add this line to /usr/share/applications/defaults.list
 
-   #+BEGIN_EXAMPLE
-       x-scheme-handler/soundklaus=soundklaus.desktop
-   #+END_EXAMPLE
+     #+BEGIN_EXAMPLE
+          x-scheme-handler/soundklaus=soundklaus.desktop
+     #+END_EXAMPLE
 
-Now you can start the [[http://oauth.net/2][OAuth2]] authentication dance with =M-x
-soundklaus-connect=. You should get redirected to /SoundCloud/ and
-allow /soundklaus.el/ to access your account. After pressing the
-=Connect= button on the /SoundCloud/ page the browser should open
-Emacs and set the =soundklaus-access-token= customization
-variable. You should save and load this variable from a safe place for
-future sessions.
+   Now you can start the [[http://oauth.net/2][OAuth2]] authentication dance with =M-x
+   soundklaus-connect=. You should get redirected to /SoundCloud/ and
+   allow /soundklaus.el/ to access your account. After pressing the
+   =Connect= button on the /SoundCloud/ page the browser should open
+   Emacs and set the =soundklaus-access-token= customization
+   variable. You should save and load this variable from a safe place for
+   future sessions.
 
 ** Screenshot
 
