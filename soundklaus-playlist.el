@@ -38,7 +38,8 @@
    (user "The minimal representation of the playlist owner")
    (title "The title of the playlist")
    (tracks "The tracks of the  playlist")
-   (duration "The duration of the playlist in milliseconds")))
+   (duration "The duration of the playlist in milliseconds")
+   (permalink-url "The URL to the SoundCloud.com page")))
 
 (defun soundklaus-make-playlist (assoc-list)
   "Make a SoundCloud playlist instance from ASSOC-LIST."

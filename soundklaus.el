@@ -71,6 +71,9 @@
              (make-string soundklaus-padding ?\s)
              "\n"))))
 
+(defgeneric soundklaus-permalink-url (media)
+  "Return the permalink URL of the SoundCloud MEDIA.")
+
 (defgeneric soundklaus-download (media)
   "Download the MEDIA from SoundCloud.")
 
@@ -144,6 +147,12 @@ evaluate BODY."
 (defmethod soundklaus-play ((playlist soundklaus-playlist))
   (emms-play-soundklaus-playlist playlist))
 
+(defmethod soundklaus-permalink-url ((track soundklaus-track))
+  (soundklaus-track-permalink-url track))
+
+(defmethod soundklaus-permalink-url ((playlist soundklaus-playlist))
+  (soundklaus-playlist-permalink-url playlist))
+
 (defmethod soundklaus-playlist-add ((track soundklaus-track))
   (emms-add-soundklaus-track track))
 
@@ -155,6 +164,16 @@ evaluate BODY."
   (interactive)
   (let ((media (soundklaus-current-media)))
     (if media (soundklaus-playlist-add media))))
+
+(defun soundklaus-browse-current ()
+  "Open the current media in a web browser."
+  (interactive)
+  (let ((media (soundklaus-current-media)))
+    (when media
+      (let ((url (soundklaus-permalink-url media)))
+        (if url
+            (browse-url url)
+          (error "No permalink found."))))))
 
 (defun soundklaus-current-media ()
   "Return the current SoundCloud track at point."
@@ -468,6 +487,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
     (define-key map (kbd "C-n") 'soundklaus-next-media)
     (define-key map (kbd "C-p") 'soundklaus-prev-media)
     (define-key map (kbd "a") 'soundklaus-append-current)
+    (define-key map (kbd "b") 'soundklaus-browse-current)
     (define-key map (kbd "d") 'soundklaus-download-current)
     (define-key map (kbd "n") 'soundklaus-next-media)
     (define-key map (kbd "p") 'soundklaus-prev-media)
