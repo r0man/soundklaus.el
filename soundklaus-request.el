@@ -111,9 +111,10 @@
 
 (defun soundklaus-send-sync-request (request)
   "Send the REQUEST."
-  (soundklaus-fetch-url
-   (soundklaus-request-url request)
-   (soundklaus-request-headers request)))
+  (let ((url-request-method (soundklaus-request-method request)))
+    (soundklaus-fetch-url
+     (soundklaus-request-url request)
+     (soundklaus-request-headers request))))
 
 (defun soundklaus-next-request (request)
   "Return the HTTP REQUEST to return the next page of a response."
