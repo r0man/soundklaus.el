@@ -51,6 +51,7 @@
 (require 'soundklaus-request)
 (require 'soundklaus-track)
 (require 'soundklaus-utils)
+(require 'soundklaus-user)
 (require 'widget)
 
 (defvar soundklaus-current-collection nil
@@ -280,13 +281,12 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
        (remove-overlays)
        (use-local-map widget-keymap)
        (widget-setup)
-       (soundklaus-mode)
        (widget-minor-mode)
        (widget-insert (format "\n  >> %s\n\n" ,title))
        ,@body)
      (goto-char 0)
      (soundklaus-next-media)
-     (read-only-mode)))
+     (soundklaus-mode)))
 
 (defun soundklaus-seek-to (duration)
   "Seek the current player to DURATION."
@@ -451,7 +451,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
     map)
   "Keymap for SoundKlaus mode.")
 
-(define-derived-mode soundklaus-mode fundamental-mode "SoundKlaus"
+(define-derived-mode soundklaus-mode special-mode "SoundKlaus"
   "Play SoundCloud music in Emacs.
 \\{soundklaus-mode-map}"
   :keymap 'soundklaus-mode-map
