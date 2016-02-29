@@ -43,7 +43,8 @@
    (playback-count "The play count of the track")
    (download-count "The download count of the track")
    (comment-count "The number of comments of the track")
-   (favoritings-count "The number of time the track has been favorited")))
+   (favoritings-count "The number of time the track has been favorited")
+   (permalink-url "The URL to the SoundCloud.com page")))
 
 (defun soundklaus-make-track (assoc-list)
   "Make a SoundCloud track instance from ASSOC-LIST."
