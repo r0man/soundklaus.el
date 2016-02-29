@@ -94,27 +94,49 @@ evaluate BODY."
        (message "Not authenticated with SoundCloud. Try M-x soundklaus-connect.")
      (progn ,@body)))
 
-(defmethod soundklaus-download ((media soundklaus-track))
-  (let ((url (soundklaus-track-stream-url media))
-	(buffer (format "*soundklaus-download-%s*" (soundklaus-track-id media)))
-	(filename (soundklaus-track-download-filename media)))
-    (make-directory (file-name-directory filename) t)
-    (let ((process (start-process "SoundCloud Download" buffer "curl" "-L" url "-o" filename)))
-      (set-process-sentinel
-       process
-       (lambda (process event)
-	 (cond
-	  ((string= "exit" (process-status process))
-	   (let ((buffer (get-buffer buffer)))
-	     (if buffer (kill-buffer buffer)))
-	   (soundklaus-tag-track media)
-	   (message "Download of %s complete." (soundklaus-track-title media))))))
-      (message "Downloading %s ..." (soundklaus-track-title media))
-      process)))
+(defun soundklaus-download-track (track filename)
+  "Download URL to FILENAME."
+  (let ((url (soundklaus-track-stream-url track))
+        (buffer (format "*soundklaus-download-%s*" (soundklaus-track-id track))))
+    (cond
+     ((file-directory-p filename)
+      (error "Can't save track to existing directory, please enter a filename."))
+     ((file-exists-p filename)
+      (message "Track already downloaded to %s." filename))
+     (t (progn
+          (make-directory (file-name-directory filename) t)
+          (let ((process (start-process "SoundCloud Download" buffer "curl" "-L" url "-o" filename)))
+            (set-process-sentinel
+             process
+             (lambda (process event)
+               (cond
+                ((string= "exit" (process-status process))
+                 (let ((buffer (get-buffer buffer)))
+                   (if buffer (kill-buffer buffer)))
+                 (soundklaus-tag-track track)
+                 (message "Download of %s complete." (soundklaus-track-title track))))))
+            (message "Downloading %s ..." (soundklaus-track-title track))
+            process))))))
+
+(defmethod soundklaus-download ((track soundklaus-track))
+  (let ((filename (read-file-name
+                   "Track filename: " soundklaus-download-dir
+                   nil nil (soundklaus-track-filename track t))))
+    (soundklaus-download-track track filename)))
 
 (defmethod soundklaus-download ((playlist soundklaus-playlist))
-  (dolist (track (soundklaus-playlist-tracks playlist))
-    (soundklaus-download track)))
+  (let* ((directory (read-directory-name
+                     "Playlist directory: " soundklaus-download-dir
+                     nil nil (soundklaus-playlist-directory playlist)))
+         (directory (expand-file-name (file-name-as-directory directory)))
+         (tracks (soundklaus-playlist-tracks playlist)))
+    (make-directory directory t)
+    (cl-loop for track-index from 0 to (1- (length tracks))
+             for track-number = (1+ track-index)
+             for track = (elt tracks track-index)
+             for filename = (soundklaus-playlist-track-filename track track-number (length tracks))
+             for filename = (concat directory filename)
+             do (soundklaus-download-track track filename))))
 
 (defmethod soundklaus-play ((track soundklaus-track))
   (emms-play-soundklaus-track track))
@@ -310,9 +332,11 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
         (setq soundklaus-current-collection next-collection)))))
 
 (defun soundklaus-pre-command-hook ()
-  (let ((percent (/ (* 100 (point)) (point-max))))
-    (when (> percent 80)
-      (soundklaus-render-next-page))))
+  "Called after each command to trigger pagination when necessary."
+  (when (string= (buffer-name (current-buffer)) soundklaus-buffer)
+    (let ((percent (/ (* 100 (point)) (point-max))))
+      (when (> percent 80)
+        (soundklaus-render-next-page)))))
 
 (defun soundklaus-setup-pagination (collection)
   "Setup pagination for COLLECTION."

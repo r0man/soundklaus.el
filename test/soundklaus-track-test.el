@@ -28,4 +28,10 @@
 			   soundklaus-access-token)
 		   (soundklaus-track-stream-url soundklaus-example-track)))))
 
+(ert-deftest soundklaus-track-filename-test ()
+  (should (string= (soundklaus-track-filename soundklaus-example-track)
+                   "Acid_Pauli_Nancy_iBang_Katermukke.mp3"))
+  (should (string= (soundklaus-track-filename soundklaus-example-track t)
+                   "KaterMukke-Acid_Pauli_Nancy_iBang_Katermukke.mp3")))
+
 (provide 'soundklaus-track-test)

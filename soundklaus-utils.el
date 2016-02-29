@@ -135,10 +135,10 @@ the elements are joined with the ampersand character."
 
 (defun soundklaus-safe-path (path)
   "Return the safe name of PATH."
-  (let* ((path (replace-regexp-in-string "[^0-9A-Za-z]+" "-" path))
-	 (path (replace-regexp-in-string "^-" "" path))
-	 (path (replace-regexp-in-string "-$" "" path)))
-    (downcase path)))
+  (let* ((path (replace-regexp-in-string "[^0-9A-Za-z]+" "_" path))
+	 (path (replace-regexp-in-string "^_" "" path))
+	 (path (replace-regexp-in-string "_$" "" path)))
+    path))
 
 (defun soundklaus-parse-callback (url)
   "Parse the code, token and scope from the OAuth2 callback URL."
