@@ -48,19 +48,18 @@
       (setf tracks (mapcar 'soundklaus-make-track tracks))
       instance)))
 
-(defun soundklaus-playlist-download-directory (playlist)
-  "Return the download directory for PLAYLIST."
-  (expand-file-name
-   (concat (file-name-as-directory soundklaus-download-dir)
-  	   (file-name-as-directory (soundklaus-safe-path (soundklaus-playlist-username playlist)))
-  	   (soundklaus-safe-path (soundklaus-playlist-title playlist)))))
+(defun soundklaus-playlist-directory (playlist)
+  "Return the directory for PLAYLIST."
+  (concat (soundklaus-safe-path (soundklaus-playlist-username playlist)) "-"
+          (soundklaus-safe-path (soundklaus-playlist-title playlist))))
 
-(defun soundklaus-playlist-track-download-filename (playlist track n)
-  "Return the download filename of a song in the PLAYLIST.
-TRACK is song number N."
-  (expand-file-name
-   (concat (file-name-as-directory (soundklaus-playlist-download-directory playlist))
-	   (format "%02d-%s.mp3" n (soundklaus-safe-path (soundklaus-track-title track))))))
+(defun soundklaus-playlist-track-filename (track track-number total-tracks)
+  "Return the filename of TRACK prefixed with TRACK-NUMBER and a
+padding derived from TOTAL-TRACKS."
+  (let* ((padding (length (number-to-string total-tracks)))
+         (padding (if (< padding 2) 2 padding))
+         (pattern (concat "%0" (number-to-string padding) "d-%s")))
+    (format pattern track-number (soundklaus-track-filename track))))
 
 (defun soundklaus-playlist-time (playlist)
   "Return the PLAYLIST duration formatted as HH:MM:SS."

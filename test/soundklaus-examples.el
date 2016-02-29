@@ -22,7 +22,11 @@
 		 :favoritings-count 2287))
 
 (defvar soundklaus-example-playlist
-  (make-instance 'soundklaus-playlist
-		 :id 1914963))
+  (make-instance
+   'soundklaus-playlist
+   :id 1914963
+   :title "CS009   ACID PAULI - Mst LP"
+   :user soundklaus-example-user
+   :duration 2508334))
 
 (provide 'soundklaus-examples)

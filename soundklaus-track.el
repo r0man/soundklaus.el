@@ -60,12 +60,14 @@
   "Return the duration of TRACK in seconds."
   (/ (soundklaus-track-duration track) 1000))
 
-(defun soundklaus-track-download-filename (track)
-  "Return the download filename for TRACK."
-  (expand-file-name
-   (concat (file-name-as-directory soundklaus-download-dir)
-	   (file-name-as-directory (soundklaus-safe-path (soundklaus-track-username track)))
-	   (concat (soundklaus-safe-path (soundklaus-track-title track)) ".mp3"))))
+(defun soundklaus-track-filename (track &optional include-user)
+  "Return the download filename for TRACK. Prefix the filename
+with the track's username if INCLUDE-USER is true."
+  (if include-user
+      (format "%s-%s.mp3"
+              (soundklaus-safe-path (soundklaus-track-username track))
+              (soundklaus-safe-path (soundklaus-track-title track)))
+    (format "%s.mp3" (soundklaus-safe-path (soundklaus-track-title track)))))
 
 (defun soundklaus-track-header (track)
   "Return the TRACK header as a string."
@@ -90,7 +92,7 @@
 
 (defun soundklaus-tag-track (track)
   "Tag the SoundCloud TRACK."
-  (let ((filename (soundklaus-track-download-filename track)))
+  (let ((filename (soundklaus-track-filename track)))
     (shell-command (format "mp3info -d %s" (shell-quote-argument filename)))
     (shell-command (format "mp3info -t %s %s"
 			   (shell-quote-argument (soundklaus-track-title track))
