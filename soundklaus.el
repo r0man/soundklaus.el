@@ -340,7 +340,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
 
 (defun soundklaus-setup-pagination (collection)
   "Setup pagination for COLLECTION."
-  (setq-local soundklaus-current-collection collection)
+  (setq soundklaus-current-collection collection)
   (add-hook 'pre-command-hook 'soundklaus-pre-command-hook t))
 
 ;;;###autoload
