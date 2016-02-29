@@ -23,7 +23,7 @@ distclean: clean
 	@rm -rf .cask
 
 lint: .cask
-	$(CASK) exec $(EMACS) $(EMACSFLAGS) --eval="(elint-file \"soundklaus.el\")" -Q
+	$(CASK) exec $(EMACS) $(EMACSFLAGS) --eval="(elint-directory \".\")" 
 
 package: test checkdoc
 	$(CASK) package
