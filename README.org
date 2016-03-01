@@ -3,7 +3,7 @@
   [[https://travis-ci.org/r0man/soundklaus.el][https://travis-ci.org/r0man/soundklaus.el.svg]]
   [[https://melpa.org/#/soundklaus][https://melpa.org/packages/soundklaus-badge.svg]]
 
-  Play [[https://soundcloud.com][SoundCloud]] music in [[http://www.gnu.org/software/emacs/][Emacs]] via [[http://www.gnu.org/software/emms][EMMS]].
+  Play music on [[https://soundcloud.com][SoundCloud]] with [[http://www.gnu.org/software/emacs/][Emacs]] via [[http://www.gnu.org/software/emms][EMMS]].
 
   [[http://imgs.xkcd.com/comics/techno.png]]
 
