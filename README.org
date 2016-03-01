@@ -31,6 +31,7 @@
        :commands
        (soundklaus-activities
         soundklaus-connect
+        soundklaus-my-favorite
         soundklaus-my-playlists
         soundklaus-my-tracks
         soundklaus-playlists
@@ -50,14 +51,16 @@
 
 ** Usage
 
-   You can search songs with =M-x soundklaus-tracks= and playlists with
-   =M-x soundklaus-playlists=. Your own tracks and playlists are
+   You can search songs with =M-x soundklaus-tracks= and playlists
+   with =M-x soundklaus-playlists=. Your own tracks and playlists are
    available with =M-x soundklaus-my-tracks= and =M-x
-   soundklaus-my-playlists=. In the =*soundklaus*= buffer you can move to
-   the next song with =C-n= or =n=, and to the previous one with =C-p= or
-   =p=. Pressing =RET= plays the current song, and =a= adds the current
-   song at point to the /EMMS/ playlist. All other available key bindings
-   can be seen with =M-x describe-minor-mode [RET] soundklaus-mode=.
+   soundklaus-my-playlists=. You can list your favorite tracks with
+   =soundklaus-my-favorite=. In the =*soundklaus*= buffer you can move
+   to the next song with =C-n= or =n=, and to the previous one with
+   =C-p= or =p=. Pressing =RET= plays the current song, and =a= adds
+   the current song at point to the /EMMS/ playlist. All other
+   available key bindings can be seen with =M-x describe-minor-mode
+   [RET] soundklaus-mode=.
 
 ** Authentication
 

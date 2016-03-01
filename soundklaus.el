@@ -175,6 +175,31 @@ evaluate BODY."
             (browse-url url)
           (error "No permalink found."))))))
 
+(defun soundklaus-like-current-track ()
+  "Like or unlike the current track."
+  (interactive)
+  (let ((media (soundklaus-current-media)))
+    (when (and media (same-class-p media 'soundklaus-track))
+      (soundklaus-with-access-token
+       (soundklaus-track-like media)
+       (let ((inhibit-read-only t))
+         (save-excursion
+           (soundklaus-kill-current-media)
+           (soundklaus-render media)))))))
+
+(defun soundklaus-current-media-region ()
+  "Return the start and end position of the current media in a list."
+  (when (get-text-property (point) :soundklaus-media)
+    (let* ((end (next-single-property-change (point) :soundklaus-media))
+           (start (previous-single-property-change end :soundklaus-media)))
+      (list start end))))
+
+(defun soundklaus-kill-current-media ()
+  "Kill the current media at point."
+  (let* ((inhibit-read-only t)
+         (positions (soundklaus-current-media-region)))
+    (delete-region (car positions) (cadr positions))))
+
 (defun soundklaus-current-media ()
   "Return the current SoundCloud track at point."
   (get-text-property (point) :soundklaus-media))
@@ -285,8 +310,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
                (soundklaus-track-comment-count track)
                (soundklaus-track-favoritings-count track))
        (upcase (or (soundklaus-track-genre track) "Unknown")))
-      (put-text-property start (point) :soundklaus-media track)
-      (widget-insert "\n"))))
+      (put-text-property start (point) :soundklaus-media track))))
 
 (defmethod soundklaus-render ((playlist soundklaus-playlist))
   (when (soundklaus-playlist-title playlist)
@@ -305,11 +329,12 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
                  (soundklaus-render-row
                   (format "%02d  %s " n (soundklaus-track-title track))
                   (soundklaus-format-duration (soundklaus-track-duration track)))
-                 (put-text-property start (point) :soundklaus-media track)))
-      (widget-insert "\n"))))
+                 (put-text-property start (point) :soundklaus-media track))))))
 
 (defmethod soundklaus-render ((collection soundklaus-collection))
-  (mapcar 'soundklaus-render (soundklaus-collection-content collection)))
+  (dolist (item (soundklaus-collection-content collection))
+    (soundklaus-render item)
+    (insert "\n")))
 
 (defmacro soundklaus-with-widget (title &rest body)
   "Render a widget with TITLE and evaluate BODY."
@@ -445,6 +470,24 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
       (soundklaus-setup-pagination collection)))))
 
 ;;;###autoload
+(defun soundklaus-my-favorite ()
+  "List your favorite tracks on SoundCloud."
+  (interactive)
+  (soundklaus-with-access-token
+   (let* ((request (soundklaus-make-request
+                    "/me/favorites"
+                    :query-params
+                    `(("limit" . ,soundklaus-track-limit)
+                      ("linked_partitioning" . 1)
+                      ("offset" . 1))))
+          (response (soundklaus-send-sync-request request))
+          (collection (soundklaus-track-collection request response)))
+     (soundklaus-with-widget
+      "MY FAVORITE TRACKS"
+      (soundklaus-render collection)
+      (soundklaus-setup-pagination collection)))))
+
+;;;###autoload
 (defun soundklaus-my-tracks ()
   "List your tracks on SoundCloud."
   (interactive)
@@ -488,6 +531,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
     (define-key map (kbd "C-p") 'soundklaus-prev-media)
     (define-key map (kbd "a") 'soundklaus-append-current)
     (define-key map (kbd "b") 'soundklaus-browse-current)
+    (define-key map (kbd "f") 'soundklaus-like-current-track)
     (define-key map (kbd "d") 'soundklaus-download-current)
     (define-key map (kbd "n") 'soundklaus-next-media)
     (define-key map (kbd "p") 'soundklaus-prev-media)

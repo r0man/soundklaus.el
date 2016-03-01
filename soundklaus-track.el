@@ -44,7 +44,8 @@
    (download-count "The download count of the track")
    (comment-count "The number of comments of the track")
    (favoritings-count "The number of time the track has been favorited")
-   (permalink-url "The URL to the SoundCloud.com page")))
+   (permalink-url "The URL to the SoundCloud.com page")
+   (user-favorite "True if the current user favorite the track, false otherwise")))
 
 (defun soundklaus-make-track (assoc-list)
   "Make a SoundCloud track instance from ASSOC-LIST."
@@ -72,8 +73,12 @@ with the track's username if INCLUDE-USER is true."
 
 (defun soundklaus-track-header (track)
   "Return the TRACK header as a string."
-  (concat (soundklaus-track-title track) " - "
-	  (soundklaus-track-username track)))
+  (concat
+   (if (equal (soundklaus-track-user-favorite track) t)
+       "♥" "♡")
+   " "
+   (soundklaus-track-title track) " - "
+   (soundklaus-track-username track)))
 
 (defun soundklaus-track-stream-url (track)
   "Return the stream URL of TRACK."
@@ -90,6 +95,17 @@ with the track's username if INCLUDE-USER is true."
 (defun soundklaus-track-username (track)
   "Return the username of TRACK."
   (soundklaus-user-username (soundklaus-track-user track)))
+
+(defun soundklaus-track-like (track)
+  "Like or unlike TRACK."
+  (with-slots (id user-favorite) track
+    (let* ((request (soundklaus-make-request
+                     (format "/me/favorites/%d" id)
+                     :method (if user-favorite "DELETE" "PUT")
+                     :query-params '((app_version . "1456762799"))))
+           (response (soundklaus-send-sync-request request)))
+      (setf user-favorite (not user-favorite))
+      response)))
 
 (defun soundklaus-tag-track (track)
   "Tag the SoundCloud TRACK."

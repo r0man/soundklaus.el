@@ -13,8 +13,8 @@
     (should (equal 502 (soundklaus-track-duration-secs track)))))
 
 (ert-deftest soundklaus-track-header-test ()
-  (should (equal "Acid Pauli & Nancy - iBang - Katermukke - KaterMukke"
-		 (soundklaus-track-header soundklaus-example-track))))
+  (should (string= (soundklaus-track-header soundklaus-example-track)
+                   "♡ Acid Pauli & Nancy - iBang - Katermukke - KaterMukke")))
 
 (ert-deftest soundklaus-track-time-test ()
   (should (equal "08:22" (soundklaus-track-time soundklaus-example-track))))
