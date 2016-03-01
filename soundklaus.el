@@ -1,4 +1,4 @@
-;;; soundklaus.el --- Play SoundCloud music in Emacs via EMMS -*- lexical-binding: t -*-
+;;; soundklaus.el --- Play music on SoundCloud with Emacs via EMMS -*- lexical-binding: t -*-
 
 ;; Copyright © 2014-2016 r0man <roman@burningswell.com>
 
@@ -531,8 +531,9 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
     (define-key map (kbd "C-p") 'soundklaus-prev-media)
     (define-key map (kbd "a") 'soundklaus-append-current)
     (define-key map (kbd "b") 'soundklaus-browse-current)
-    (define-key map (kbd "f") 'soundklaus-like-current-track)
     (define-key map (kbd "d") 'soundklaus-download-current)
+    (define-key map (kbd "f") 'soundklaus-like-current-track)
+    (define-key map (kbd "g") 'emms-playlist-mode-go)
     (define-key map (kbd "n") 'soundklaus-next-media)
     (define-key map (kbd "p") 'soundklaus-prev-media)
     (define-key map (kbd "q") 'soundklaus-kill-buffer)
@@ -540,7 +541,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   "Keymap for SoundKlaus mode.")
 
 (define-derived-mode soundklaus-mode special-mode "SoundKlaus"
-  "Play SoundCloud music in Emacs.
+  "Play music on SoundCloud with Emacs via EMMS.
 \\{soundklaus-mode-map}"
   :keymap 'soundklaus-mode-map
   :group 'soundklaus-mode)
