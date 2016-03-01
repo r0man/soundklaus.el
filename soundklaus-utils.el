@@ -26,8 +26,15 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'url-util)
 (require 's)
+
+(defun soundklaus-string-alist (alist)
+  "Convert all keys and values in ALIST to strings."
+  (cl-loop for (k . v) in alist
+           if (and k v)
+           collect (cons (format "%s" k) (format "%s" v))))
 
 (defun soundklaus-format-duration (duration-in-ms &optional always-show-hours)
   "Format DURATION-IN-MS in the HH:MM:SS format."

@@ -4,7 +4,8 @@
 (ert-deftest soundklaus-playlist-fetch-test ()
   (let* ((playlist soundklaus-example-playlist)
          (playlist (soundklaus-playlist-fetch playlist)))
-    (should (equal (soundklaus-playlist-title playlist) "CS009   ACID PAULI - Mst LP"))))
+    (should (string= (soundklaus-playlist-title playlist)
+                     "CS009 ∆ ACID PAULI - Mst LP"))))
 
 (ert-deftest soundklaus-playlist-path-test ()
   (let ((playlist soundklaus-example-playlist))
