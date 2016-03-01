@@ -28,6 +28,8 @@
 
 (require 'eieio)
 (require 'json)
+(require 'request)
+(require 'soundklaus-custom)
 (require 'soundklaus-utils)
 
 ;; The SoundCloud HTTP request
@@ -63,6 +65,11 @@
     :documentation "The query parameters of the HTTP request."))
   "A class representing a HTTP request.")
 
+(defun soundklaus-request-params-as-strings (request)
+  "Return the query params of REQUEST with keys and values all
+converted to strings."
+  (soundklaus-string-alist (soundklaus-request-query-params request)))
+
 (cl-defun soundklaus-make-request (uri &key headers method scheme server-name server-port query-params)
   "Return a HTTP request of METHOD to URL with query parameters QUERY-PARAMS."
   (let ((scheme (or scheme 'https)))
@@ -79,42 +86,36 @@
                    :uri uri
                    :query-params
                    (append query-params
-                           `((client_id ,soundklaus-client-id)
-                             (oauth_token ,soundklaus-access-token))))))
+                           `(("client_id" . ,soundklaus-client-id)
+                             ("oauth_token" . ,soundklaus-access-token))))))
 
-(defun soundklaus-request-url (request)
+(defun soundklaus-request-url (request &optional include-params)
   "Return the formatted URL in REQUEST."
   (let ((scheme (soundklaus-request-scheme request))
-        (port (soundklaus-request-server-port request))
-        (query-params (soundklaus-request-query-params request)))
+        (port (soundklaus-request-server-port request)))
     (concat (symbol-name scheme) "://" (soundklaus-request-server-name request)
             (when port
               (concat ":" (number-to-string port)))
             (soundklaus-request-uri request)
-            (when query-params
-              (concat "?" (soundklaus-url-encode query-params))))))
+            (when include-params
+              (concat "?" (request--urlencode-alist
+                           (soundklaus-request-params-as-strings request)))))))
 
-(defun soundklaus-parse-response (buffer)
-  "Parse the JSON response from BUFFER."
-  (with-current-buffer buffer
-    (encode-coding-region (point-min) (point-max) 'latin-1)
-    (decode-coding-region (point-min) (point-max) 'utf-8)
-    (goto-char (point-min))
-    (re-search-forward "^$" nil 'move)
-    (json-read)))
+(defun soundklaus-request-parser ()
+  "Parse the body of a HTTP response from the current buffer."
+  (encode-coding-region (point-min) (point-max) 'latin-1)
+  (decode-coding-region (point-min) (point-max) 'utf-8)
+  (goto-char (point-min))
+  (json-read))
 
-(defun soundklaus-fetch-url (url &optional headers)
-  "Fetch the content of URL."
-  (let* ((url-request-extra-headers headers)
-         (buffer (url-retrieve-synchronously url)))
-    (soundklaus-parse-response buffer)))
-
-(defun soundklaus-send-sync-request (request)
-  "Send the REQUEST."
-  (let ((url-request-method (soundklaus-request-method request)))
-    (soundklaus-fetch-url
-     (soundklaus-request-url request)
-     (soundklaus-request-headers request))))
+(defun soundklaus-send-sync-request (http-request)
+  "Send the HTTP-REQUEST."
+  (request-response-data
+   (request
+    (soundklaus-request-url http-request)
+    :params (soundklaus-request-params-as-strings http-request)
+    :parser #'soundklaus-request-parser
+    :sync t)))
 
 (defun soundklaus-next-request (request)
   "Return the HTTP REQUEST to return the next page of a response."

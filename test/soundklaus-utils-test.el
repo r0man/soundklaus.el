@@ -3,6 +3,13 @@
 (require 'soundklaus-utils)
 (require 'ert)
 
+(ert-deftest soundklaus-string-alist-test ()
+  (should (equal (soundklaus-string-alist nil) nil))
+  (should (equal (soundklaus-string-alist '((a . nil))) nil))
+  (should (equal (soundklaus-string-alist '((nil . "v"))) nil))
+  (should (equal (soundklaus-string-alist '((k1 . "v2") ("k2" . 1)))
+                 '(("k1" . "v2") ("k2" . "1")))))
+
 (ert-deftest soundklaus-format-duration-test ()
   (should (equal "00:00" (soundklaus-format-duration 0)))
   (should (equal "00:00:00" (soundklaus-format-duration 0 t)))

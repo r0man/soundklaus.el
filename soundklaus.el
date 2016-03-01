@@ -6,7 +6,7 @@
 ;; URL: https://github.com/r0man/soundklaus.el
 ;; Keywords: soundcloud, music, emms
 ;; Version: 0.1.0
-;; Package-Requires: ((dash "2.12.1") (emacs "24") (emms "4.0") (s "1.10.0") (pkg-info "0.4") (cl-lib "0.5"))
+;; Package-Requires: ((dash "2.12.1") (emacs "24") (emms "4.0") (s "1.11.0") (pkg-info "0.4") (cl-lib "0.5") (request "0.2.0"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -254,7 +254,8 @@ evaluate BODY."
     `(("client_id" . ,soundklaus-client-id)
       ("redirect_uri" . ,soundklaus-redirect-url)
       ("response_type" . "code_and_token")
-      ("scope" . "non-expiring")))))
+      ("scope" . "non-expiring")))
+   t))
 
 (defadvice server-visit-files (around soundklaus-detect-protocol-server activate)
   "Handle SoundCloud OAuth2 callback URLs."
@@ -470,7 +471,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
       (soundklaus-setup-pagination collection)))))
 
 ;;;###autoload
-(defun soundklaus-my-favorite ()
+(defun soundklaus-my-favorites ()
   "List your favorite tracks on SoundCloud."
   (interactive)
   (soundklaus-with-access-token
