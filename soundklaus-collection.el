@@ -27,7 +27,9 @@
 ;;; Code:
 
 (require 'emms)
+(require 'request)
 (require 'soundklaus-playlist)
+(require 'soundklaus-request)
 (require 'soundklaus-track)
 
 (defclass soundklaus-collection ()
@@ -51,15 +53,16 @@
 
 (defun soundklaus-make-collection (request response item-fn)
   "Make a SoundCloud track collection from REQUEST and RESPONSE."
-  (make-instance
-   'soundklaus-collection
-   :content (delq nil (mapcar
-                       (lambda (resource)
-                         (funcall item-fn resource))
-                       (cdr (assoc 'collection response))))
-   :next (cdr (assoc 'next_href response))
-   :item-fn item-fn
-   :request request))
+  (let ((data (request-response-data response)))
+    (make-instance
+     'soundklaus-collection
+     :content (delq nil (mapcar
+                         (lambda (resource)
+                           (funcall item-fn resource))
+                         (cdr (assoc 'collection data))))
+     :next (cdr (assoc 'next_href data))
+     :item-fn item-fn
+     :request request)))
 
 (defun soundklaus-make-activity-item (resource)
   "Make a SoundCloud activity item from RESOURCE."
@@ -86,6 +89,13 @@
 (defun soundklaus-playlist-collection (request response)
   "Make a SoundCloud playlist collection from REQUEST and RESPONSE."
   (soundklaus-make-collection request response #'soundklaus-make-playlist))
+
+(defun soundklaus-collection-next-request (collection)
+  "Return the next pagination request object for COLLECTION."
+  (let ((next-url (soundklaus-collection-next collection)))
+    (if (and next-url (s-matches-p "cursor=" next-url))
+        (soundklaus-next-cursor-request (soundklaus-parse-url next-url))
+      (soundklaus-next-offset-request (soundklaus-collection-request collection)))))
 
 (provide 'soundklaus-collection)
 

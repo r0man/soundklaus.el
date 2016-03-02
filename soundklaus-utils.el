@@ -29,6 +29,25 @@
 (require 'cl-lib)
 (require 'url-util)
 (require 's)
+(require 'soundklaus-custom)
+
+(cl-defun soundklaus-alist-merge (&rest lists)
+  "Merge the assoc LISTS from left to right."
+  (-reduce-from
+   (lambda (initial item)
+     (let* ((k (car item))
+            (v (cdr item))
+            (found (assoc k initial)))
+       (if found
+           (progn (setf (cdr found) v)
+                  initial)
+         (cons (cons k v) initial))))
+   nil (apply #'append lists)))
+
+(defun soundklaus-auth-params ()
+  "Return the query params used for authentication."
+  `(("client_id" . ,soundklaus-client-id)
+    ("oauth_token" . ,soundklaus-access-token)))
 
 (defun soundklaus-string-alist (alist)
   "Convert all keys and values in ALIST to strings."

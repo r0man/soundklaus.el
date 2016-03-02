@@ -45,6 +45,7 @@
 (require 'emms)
 (require 's)
 (require 'server)
+(require 'simple)
 (require 'soundklaus-collection)
 (require 'soundklaus-custom)
 (require 'soundklaus-generic)
@@ -97,12 +98,12 @@ evaluate BODY."
           (let ((process (start-process "SoundCloud Download" buffer "curl" "-L" url "-o" filename)))
             (set-process-sentinel
              process
-             (lambda (process event)
+             (lambda (process _)
                (cond
                 ((string= "exit" (process-status process))
                  (let ((buffer (get-buffer buffer)))
                    (if buffer (kill-buffer buffer)))
-                 (soundklaus-tag-track track)
+                 (soundklaus-tag-track filename track)
                  (message "Download of %s complete." (soundklaus-track-title track))))))
             (message "Downloading %s ..." (soundklaus-track-title track))
             process))))))
@@ -217,9 +218,13 @@ evaluate BODY."
   (let ((pos (next-single-property-change (point) :soundklaus-media)))
     (when pos
       (goto-char pos)
-      (unless (soundklaus-current-media)
-	(let ((pos (next-single-property-change pos :soundklaus-media)))
-	  (if pos (goto-char pos)))))))
+      (let ((media (soundklaus-current-media)))
+        (if media
+            media
+          (let ((pos (next-single-property-change pos :soundklaus-media)))
+            (when pos
+              (goto-char pos)
+              (soundklaus-current-media))))))))
 
 (defun soundklaus-prev-media ()
   "Move point to the next SoundCloud track."
@@ -227,9 +232,13 @@ evaluate BODY."
   (let ((pos (previous-single-property-change (point) :soundklaus-media)))
     (when pos
       (goto-char pos)
-      (unless (soundklaus-current-media)
-	(let ((pos (previous-single-property-change pos :soundklaus-media)))
-	  (if pos (goto-char pos)))))))
+      (let ((media (soundklaus-current-media)))
+        (if media
+            media
+          (let ((pos (previous-single-property-change pos :soundklaus-media)))
+            (when pos
+              (goto-char pos)
+              (soundklaus-current-media))))))))
 
 (defun soundklaus-play-current ()
   "Play the current SoundCloud media at point."
@@ -293,7 +302,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (when (soundklaus-track-title track)
     (let ((start (point)))
       (soundklaus-render-row
-       (propertize (soundklaus-track-header track) 'face 'bold)
+       (soundklaus-track-header track)
        (propertize (or (soundklaus-track-time track) "") 'face 'bold))
       (soundklaus-horizontal-rule)
       (soundklaus-render-row
@@ -302,32 +311,52 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
                (soundklaus-track-download-count track)
                (soundklaus-track-comment-count track)
                (soundklaus-track-favoritings-count track))
-       (upcase (or (soundklaus-track-genre track) "Unknown")))
+       (upcase (s-trim (or (soundklaus-track-genre track) "Unknown"))))
       (put-text-property start (point) :soundklaus-media track))))
 
 (defmethod soundklaus-render ((playlist soundklaus-playlist))
   (when (soundklaus-playlist-title playlist)
-    (let* ((playlist (soundklaus-playlist-fetch playlist))
-           (start (point)))
+    (let ((start (point)))
       (soundklaus-render-row
-       (propertize (concat (soundklaus-playlist-title playlist) " - "
-                           (soundklaus-playlist-username playlist))
-                   'face 'bold)
+       (concat (propertize (soundklaus-playlist-title playlist) 'face 'bold)
+               " - " (soundklaus-playlist-username playlist))
        (propertize (or (soundklaus-playlist-time playlist) "") 'face 'bold))
-      (put-text-property start (point) :soundklaus-media playlist)
       (soundklaus-horizontal-rule)
-      (cl-loop for n from 1 to (length (soundklaus-playlist-tracks playlist)) do
-               (let ((track (elt (soundklaus-playlist-tracks playlist) (- n 1)))
-                     (start (point)))
-                 (soundklaus-render-row
-                  (format "%02d  %s " n (soundklaus-track-title track))
-                  (soundklaus-format-duration (soundklaus-track-duration track)))
-                 (put-text-property start (point) :soundklaus-media track))))))
+      (put-text-property start (point) :soundklaus-media playlist)
+      (if (soundklaus-playlist-tracks playlist)
+          (cl-loop for n from 1 to (length (soundklaus-playlist-tracks playlist)) do
+                   (let ((track (elt (soundklaus-playlist-tracks playlist) (- n 1)))
+                         (start (point)))
+                     (soundklaus-render-row
+                      (format "%02d  %s " n (soundklaus-track-title track))
+                      (soundklaus-format-duration (soundklaus-track-duration track)))
+                     (put-text-property start (point) :soundklaus-media track)))
+        (soundklaus-playlist-fetch-async
+         playlist (lambda (playlist)
+                    (with-current-buffer soundklaus-buffer
+                      (save-excursion
+                        (when (soundklaus-goto-playlist playlist)
+                          (let ((inhibit-read-only t))
+                            (soundklaus-kill-current-media)
+                            (soundklaus-render playlist)))))))))))
+
+(defun soundklaus-goto-playlist (playlist)
+  (with-current-buffer soundklaus-buffer
+    (goto-char (point-min))
+    (cl-loop
+     (let ((media (soundklaus-next-media)))
+       (if (not media)
+           (return)
+         (if (and (same-class-p (soundklaus-current-media) 'soundklaus-playlist)
+                  (equal (soundklaus-playlist-id playlist)
+                         (soundklaus-playlist-id (soundklaus-current-media))))
+             (return media)))))))
 
 (defmethod soundklaus-render ((collection soundklaus-collection))
   (dolist (item (soundklaus-collection-content collection))
     (soundklaus-render item)
-    (insert "\n")))
+    (insert "\n"))
+  (soundklaus-setup-pagination collection))
 
 (defmacro soundklaus-with-widget (title &rest body)
   "Render a widget with TITLE and evaluate BODY."
@@ -335,6 +364,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
      (set-buffer (get-buffer-create soundklaus-buffer))
      (switch-to-buffer-other-window soundklaus-buffer)
      (kill-all-local-variables)
+     (setq soundklaus-current-collection nil)
      (let ((inhibit-read-only t))
        (erase-buffer)
        (remove-overlays)
@@ -345,7 +375,8 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
        ,@body)
      (goto-char 0)
      (soundklaus-next-media)
-     (soundklaus-mode)))
+     (soundklaus-mode)
+     (add-hook 'post-command-hook 'soundklaus-post-command-hook t)))
 
 (defun soundklaus-seek-to (duration)
   "Seek the current player to DURATION."
@@ -356,49 +387,52 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
 
 (defun soundklaus-render-next-page ()
   "Fetch and render the next page of the current collection."
-  (let* ((collection soundklaus-current-collection)
-         (request (soundklaus-collection-request collection))
-         (next-request (soundklaus-next-request request))
-         (response (soundklaus-send-sync-request next-request))
-         (item-fn (soundklaus-collection-item-fn collection))
-         (next-collection (soundklaus-make-collection next-request response item-fn)))
-    (save-excursion
-      (let ((inhibit-read-only t))
-        (goto-char (point-max))
-        (soundklaus-render next-collection)
-        (setq soundklaus-current-collection next-collection)))))
+  (when soundklaus-current-collection
+    (let ((collection soundklaus-current-collection))
+      (setq soundklaus-current-collection nil)
+      (when (soundklaus-collection-content collection)
+        (message "Loading next page from SoundCloud ...")
+        (soundklaus-send-async-request
+         (soundklaus-collection-next-request collection)
+         (lambda (request response)
+           (with-current-buffer soundklaus-buffer
+             (save-excursion
+               (let* ((inhibit-read-only t)
+                      (item-fn (soundklaus-collection-item-fn collection))
+                      (next-collection (soundklaus-make-collection request response item-fn)))
+                 (goto-char (point-max))
+                 (soundklaus-render next-collection)
+                 (setq soundklaus-current-collection next-collection)
+                 (message nil))))))))))
 
-(defun soundklaus-pre-command-hook ()
+(defun soundklaus-post-command-hook ()
   "Called after each command to trigger pagination when necessary."
   (when (string= (buffer-name (current-buffer)) soundklaus-buffer)
-    (let ((percent (/ (* 100 (point)) (point-max))))
-      (when (> percent 80)
-        (soundklaus-render-next-page)))))
+    (when (> (line-number-at-pos (point))
+             (- (line-number-at-pos (point-max)) 10))
+      (soundklaus-render-next-page))))
 
 (defun soundklaus-setup-pagination (collection)
   "Setup pagination for COLLECTION."
-  (setq soundklaus-current-collection collection)
-  (add-hook 'pre-command-hook 'soundklaus-pre-command-hook t))
+  (setq soundklaus-current-collection collection))
 
 ;;;###autoload
 (defun soundklaus-activities ()
   "List activities on SoundCloud."
   (interactive)
   (soundklaus-with-access-token
-   (let* ((request (soundklaus-make-request
-                    "/me/activities"
-                    :query-params
-                    `(("limit" . ,soundklaus-activity-limit)
-                      ("linked_partitioning" . 1)
-                      ("offset" . 1))))
-          (response (soundklaus-send-sync-request request))
-          (collection (soundklaus-activities-collection request response)))
-     (soundklaus-with-widget
-      "ACTIVITIES"
-      (soundklaus-render collection)
-      ;; TODO: Paginate via linked_partitioning, not offset!
-      ;; (soundklaus-setup-pagination collection)
-      ))))
+   (soundklaus-send-async-request
+    (soundklaus-make-request
+     "/me/activities"
+     :query-params
+     `(("limit" . ,soundklaus-activity-limit)
+       ("linked_partitioning" . 1)
+       ("offset" . 1)))
+    (lambda (request response)
+      (let ((collection (soundklaus-activities-collection request response)))
+        (soundklaus-with-widget
+         "ACTIVITIES"
+         (soundklaus-render collection)))))))
 
 ;;;###autoload
 (defun soundklaus-connect ()
@@ -410,93 +444,93 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
 (defun soundklaus-tracks (query)
   "List all tracks on SoundCloud matching QUERY."
   (interactive "MQuery: ")
-  (let* ((request (soundklaus-make-request
-                   "/tracks"
-                   :query-params
-                   `(("limit" . ,soundklaus-track-limit)
-                     ("linked_partitioning" . 1)
-                     ("offset" . 1)
-                     ("q" . ,query))))
-         (response (soundklaus-send-sync-request request))
-         (collection (soundklaus-track-collection request response)))
-    (soundklaus-with-widget
-     "TRACKS"
-     (soundklaus-render collection)
-     (soundklaus-setup-pagination collection))))
+  (soundklaus-send-async-request
+   (soundklaus-make-request
+    "/tracks"
+    :query-params
+    `(("limit" . ,soundklaus-track-limit)
+      ("linked_partitioning" . 1)
+      ("offset" . 1)
+      ("q" . ,query)))
+   (lambda (request response)
+     (let ((collection (soundklaus-track-collection request response)))
+       (soundklaus-with-widget
+        "TRACKS"
+        (soundklaus-render collection))))))
 
 ;;;###autoload
 (defun soundklaus-playlists (query)
   "List all playlists on SoundCloud matching QUERY."
   (interactive "MQuery: ")
-  (let* ((request (soundklaus-make-request
-                   "/playlists"
-                   :query-params
-                   `(("limit" . ,soundklaus-playlist-limit)
-                     ("linked_partitioning" . 1)
-                     ("offset" . 1)
-                     ("q" . ,query)
-                     ("representation" . "id"))))
-         (response (soundklaus-send-sync-request request))
-         (collection (soundklaus-playlist-collection request response)))
-    (soundklaus-with-widget
-     "PLAYLISTS"
-     (soundklaus-render collection)
-     (soundklaus-setup-pagination collection))))
+  (soundklaus-send-async-request
+   (soundklaus-make-request
+    "/playlists"
+    :query-params
+    `(("limit" . ,soundklaus-playlist-limit)
+      ("linked_partitioning" . 1)
+      ("offset" . 1)
+      ("q" . ,query)
+      ("representation" . "compact")))
+   (lambda (request response)
+     (let ((collection (soundklaus-playlist-collection request response)))
+       (soundklaus-with-widget
+        "PLAYLISTS"
+        (soundklaus-render collection))))))
 
 ;;;###autoload
 (defun soundklaus-my-playlists ()
   "List your playlists on SoundCloud."
   (interactive)
   (soundklaus-with-access-token
-   (let* ((request (soundklaus-make-request
-                    "/me/playlists"
-                    :query-params
-                    `(("limit" . ,soundklaus-playlist-limit)
-                      ("linked_partitioning" . 1)
-                      ("offset" . 1)
-                      ("representation" . "id"))))
-          (response (soundklaus-send-sync-request request))
-          (collection (soundklaus-playlist-collection request response)))
-     (soundklaus-with-widget
-      "MY PLAYLISTS"
-      (soundklaus-render collection)
-      (soundklaus-setup-pagination collection)))))
+   (soundklaus-send-async-request
+    (soundklaus-make-request
+     "/me/playlists"
+     :query-params
+     `(("limit" . ,soundklaus-playlist-limit)
+       ("linked_partitioning" . 1)
+       ("offset" . 1)
+       ("representation" . "id")))
+    (lambda (request response)
+      (let ((collection (soundklaus-playlist-collection request response)))
+        (soundklaus-with-widget
+         "MY PLAYLISTS"
+         (soundklaus-render collection)))))))
 
 ;;;###autoload
 (defun soundklaus-my-favorites ()
   "List your favorite tracks on SoundCloud."
   (interactive)
   (soundklaus-with-access-token
-   (let* ((request (soundklaus-make-request
-                    "/me/favorites"
-                    :query-params
-                    `(("limit" . ,soundklaus-track-limit)
-                      ("linked_partitioning" . 1)
-                      ("offset" . 1))))
-          (response (soundklaus-send-sync-request request))
-          (collection (soundklaus-track-collection request response)))
-     (soundklaus-with-widget
-      "MY FAVORITE TRACKS"
-      (soundklaus-render collection)
-      (soundklaus-setup-pagination collection)))))
+   (soundklaus-send-async-request
+    (soundklaus-make-request
+     "/me/favorites"
+     :query-params
+     `(("limit" . ,soundklaus-track-limit)
+       ("linked_partitioning" . 1)
+       ("offset" . 1)))
+    (lambda (request response)
+      (let ((collection (soundklaus-track-collection request response)))
+        (soundklaus-with-widget
+         "MY FAVORITE TRACKS"
+         (soundklaus-render collection)))))))
 
 ;;;###autoload
 (defun soundklaus-my-tracks ()
   "List your tracks on SoundCloud."
   (interactive)
   (soundklaus-with-access-token
-   (let* ((request (soundklaus-make-request
-                    "/me/tracks"
-                    :query-params
-                    `(("limit" . ,soundklaus-track-limit)
-                      ("linked_partitioning" . 1)
-                      ("offset" . 1))))
-          (response (soundklaus-send-sync-request request))
-          (collection (soundklaus-track-collection request response)))
-     (soundklaus-with-widget
-      "MY TRACKS"
-      (soundklaus-render collection)
-      (soundklaus-setup-pagination collection)))))
+   (soundklaus-send-async-request
+    (soundklaus-make-request
+     "/me/tracks"
+     :query-params
+     `(("limit" . ,soundklaus-track-limit)
+       ("linked_partitioning" . 1)
+       ("offset" . 1)))
+    (lambda (request response)
+      (let ((collection (soundklaus-track-collection request response)))
+        (soundklaus-with-widget
+         "MY TRACKS"
+         (soundklaus-render collection)))))))
 
 ;;;###autoload
 (defun soundklaus-desktop-entry-save ()

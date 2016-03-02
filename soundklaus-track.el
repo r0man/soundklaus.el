@@ -74,11 +74,14 @@ with the track's username if INCLUDE-USER is true."
 (defun soundklaus-track-header (track)
   "Return the TRACK header as a string."
   (concat
-   (if (equal (soundklaus-track-user-favorite track) t)
-       "♥" "♡")
-   " "
-   (soundklaus-track-title track) " - "
-   (soundklaus-track-username track)))
+   (propertize
+    (concat
+     (if (soundklaus-track-user-favorite track)
+         "♥"
+       "♡")
+     " " (soundklaus-track-title track) )
+    'face 'bold)
+   " - " (soundklaus-track-username track)))
 
 (defun soundklaus-track-stream-url (track)
   "Return the stream URL of TRACK."
@@ -101,19 +104,23 @@ with the track's username if INCLUDE-USER is true."
   (with-slots (id user-favorite) track
     (let* ((request (soundklaus-make-request
                      (format "/me/favorites/%d" id)
-                     :method (if user-favorite "DELETE" "PUT")
-                     :query-params '((app_version . "1456762799"))))
-           (response (soundklaus-send-sync-request request)))
+                     :method (if user-favorite "DELETE" "PUT")))
+           (response (soundklaus-send-sync-request request))
+           (status (request-response-status-code response))
+           (title (soundklaus-track-title track)))
       (setf user-favorite (not user-favorite))
+      (cond
+       ((= status 200) (message "Unliked %s." title))
+       ((= status 201) (message "Liked %s." title))
+       (t (error (format "Can't like %s." title) )))
       response)))
 
-(defun soundklaus-tag-track (track)
+(defun soundklaus-tag-track (filename track)
   "Tag the SoundCloud TRACK."
-  (let ((filename (soundklaus-track-filename track)))
-    (shell-command (format "mp3info -d %s" (shell-quote-argument filename)))
-    (shell-command (format "mp3info -t %s %s"
-			   (shell-quote-argument (soundklaus-track-title track))
-			   (shell-quote-argument filename)))))
+  (shell-command (format "mp3info -d %s" (shell-quote-argument filename)))
+  (shell-command (format "mp3info -t %s %s"
+                         (shell-quote-argument (soundklaus-track-title track))
+                         (shell-quote-argument filename))))
 
 (define-emms-source soundklaus-track (track)
   "An EMMS source for a SoundCloud TRACK."
