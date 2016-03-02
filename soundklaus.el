@@ -47,12 +47,16 @@
 (require 'server)
 (require 'soundklaus-collection)
 (require 'soundklaus-custom)
+(require 'soundklaus-generic)
 (require 'soundklaus-playlist)
 (require 'soundklaus-request)
 (require 'soundklaus-track)
-(require 'soundklaus-utils)
 (require 'soundklaus-user)
+(require 'soundklaus-utils)
 (require 'widget)
+
+(when (boundp 'helm-mode)
+  (require 'soundklaus-helm))
 
 (defvar soundklaus-current-collection nil
   "The current collection.")
@@ -70,24 +74,6 @@
                  (make-string width ?-))
              (make-string soundklaus-padding ?\s)
              "\n"))))
-
-(defgeneric soundklaus-permalink-url (media)
-  "Return the permalink URL of the SoundCloud MEDIA.")
-
-(defgeneric soundklaus-download (media)
-  "Download the MEDIA from SoundCloud.")
-
-(defgeneric soundklaus-play (media)
-  "Play the SoundCloud MEDIA.")
-
-(defgeneric soundklaus-playlist-add (media)
-  "Insert the SoundCloud MEDIA into the EMMS playlist.")
-
-(defgeneric soundklaus-render (media)
-  "Render the SoundCloud MEDIA as a list item.")
-
-(defgeneric soundklaus-path (resource)
-  "Returns the path to the RESOURCE on SoundCloud.")
 
 (defmacro soundklaus-with-access-token (&rest body)
   "Ensure that the `soundklaus-access-token` is not nil.
@@ -145,7 +131,10 @@ evaluate BODY."
   (emms-play-soundklaus-track track))
 
 (defmethod soundklaus-play ((playlist soundklaus-playlist))
-  (emms-play-soundklaus-playlist playlist))
+  (emms-play-soundklaus-playlist
+   (if (soundklaus-playlist-tracks playlist)
+       playlist
+     (soundklaus-playlist-fetch playlist))))
 
 (defmethod soundklaus-permalink-url ((track soundklaus-track))
   (soundklaus-track-permalink-url track))
@@ -157,7 +146,10 @@ evaluate BODY."
   (emms-add-soundklaus-track track))
 
 (defmethod soundklaus-playlist-add ((playlist soundklaus-playlist))
-  (emms-add-soundklaus-playlist playlist))
+  (emms-add-soundklaus-playlist
+   (if (soundklaus-playlist-tracks playlist)
+       playlist
+     (soundklaus-playlist-fetch playlist))))
 
 (defun soundklaus-append-current ()
   "Append the current SoundCloud media at point to the EMMS playlist."
