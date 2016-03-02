@@ -28,6 +28,7 @@
 
 (require 'emms)
 (require 'soundklaus-resource)
+(require 'soundklaus-utils)
 
 (define-soundklaus-resource user "/users/:id"
   "A SoundCloud user"

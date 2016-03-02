@@ -31,6 +31,7 @@
 (require 'soundklaus-request)
 (require 'soundklaus-resource)
 (require 'soundklaus-user)
+(require 'soundklaus-utils)
 
 (define-soundklaus-resource playlist "/playlists/:id"
   "A SoundCloud playlist"
@@ -55,8 +56,9 @@
           (soundklaus-safe-path (soundklaus-playlist-title playlist))))
 
 (defun soundklaus-playlist-track-filename (track track-number total-tracks)
-  "Return the filename of TRACK prefixed with TRACK-NUMBER and a
-padding derived from TOTAL-TRACKS."
+  "Return the filename of TRACK in a playlist.
+The filename will be prefixed with TRACK-NUMBER and it's padding
+will be derived from TOTAL-TRACKS."
   (let* ((padding (length (number-to-string total-tracks)))
          (padding (if (< padding 2) 2 padding))
          (pattern (concat "%0" (number-to-string padding) "d-%s")))
@@ -79,7 +81,14 @@ padding derived from TOTAL-TRACKS."
   "Fetch the PLAYLIST from the SoundCloud API."
   (let* ((request (soundklaus-make-request (soundklaus-playlist-path playlist)))
          (response (soundklaus-send-sync-request request)))
-    (soundklaus-make-playlist response)))
+    (soundklaus-make-playlist (request-response-data response))))
+
+(defun soundklaus-playlist-fetch-async (playlist callback)
+  "Fetch the PLAYLIST from the SoundCloud API asynchronously and call CALLBACK."
+  (soundklaus-send-async-request
+   (soundklaus-make-request (soundklaus-playlist-path playlist))
+   (lambda (request response)
+     (funcall callback (soundklaus-make-playlist (request-response-data response))))))
 
 (define-emms-source soundklaus-playlist (playlist)
   "An EMMS source for a SoundCloud PLAYLIST."

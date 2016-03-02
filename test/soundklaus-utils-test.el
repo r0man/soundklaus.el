@@ -101,4 +101,18 @@
   (should (equal 100800 (soundklaus-parse-duration "1d 4h")))
   (should (equal 60 (soundklaus-parse-duration "1m garbage"))))
 
+(ert-deftest soundklaus-alist-merge-test ()
+  (should-not (soundklaus-alist-merge))
+  (should-not (soundklaus-alist-merge nil))
+  (should-not (soundklaus-alist-merge nil nil))
+  (should (equal (soundklaus-alist-merge '((a . 1))) '((a . 1))))
+  (should (equal (soundklaus-alist-merge '((a . 1)) '((a . 2))) '((a . 2)))))
+
+(ert-deftest soundklaus-auth-params-test ()
+  (let ((soundklaus-client-id "CLIENT-ID")
+        (soundklaus-access-token "ACCESS-TOKEN"))
+    (should (equal (soundklaus-auth-params)
+                   '(("client_id" . "CLIENT-ID")
+                     ("oauth_token" . "ACCESS-TOKEN"))))))
+
 (provide 'soundklaus-utils-test)
