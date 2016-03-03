@@ -71,6 +71,11 @@
   :type 'integer
   :group 'soundklaus-mode)
 
+(defcustom soundklaus-show-help t
+  "Show help when opening the `*soundklaus*' buffer."
+  :type 'boolean
+  :group 'soundklaus-mode)
+
 (defcustom soundklaus-playlist-limit 10
   "The number of playlists to fetch from SoundCloud."
   :type 'integer
