@@ -31,6 +31,11 @@
 (require 's)
 (require 'soundklaus-custom)
 
+(defun soundklaus-authenticate-message ()
+  "Display a message that the user should authenticate."
+  (message "Not authenticated with SoundCloud. Try %s."
+           (soundklaus-bold "M-x soundklaus-connect")))
+
 (cl-defun soundklaus-alist-merge (&rest lists)
   "Merge the assoc LISTS from left to right."
   (-reduce-from
@@ -44,10 +49,29 @@
          (cons (cons k v) initial))))
    nil (apply #'append lists)))
 
+(defun soundklaus-bold (text)
+  "Add the `bold' face property to TEXT."
+  (when text (propertize text 'face 'bold)))
+
 (defun soundklaus-auth-params ()
   "Return the query params used for authentication."
   `(("client_id" . ,soundklaus-client-id)
     ("oauth_token" . ,soundklaus-access-token)))
+
+(defun soundklaus-help-bindings (command)
+  "Return the formatted key bindings for `command'."
+  (mapconcat (lambda (key) (propertize (key-description key) 'face 'bold))
+             (where-is-internal command soundklaus-mode-map) ", "))
+
+(defun soundklaus-help ()
+  "Show help message about some key bindings."
+  (message "Next (%s) / Previous (%s), Play (%s), Queue (%s), Seek forward (%s) / backward (%s)."
+           (soundklaus-help-bindings #'soundklaus-next-media)
+           (soundklaus-help-bindings #'soundklaus-prev-media)
+           (soundklaus-help-bindings #'soundklaus-play-current)
+           (soundklaus-help-bindings #'soundklaus-append-current)
+           (soundklaus-help-bindings #'emms-seek-forward)
+           (soundklaus-help-bindings #'emms-seek-backward)))
 
 (defun soundklaus-string-alist (alist)
   "Convert all keys and values in ALIST to strings."

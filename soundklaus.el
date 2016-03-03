@@ -81,7 +81,7 @@
 If `soundklaus-access-token` is not set raise an error, otherwise
 evaluate BODY."
   `(if (s-blank? soundklaus-access-token)
-       (message "Not authenticated with SoundCloud. Try M-x soundklaus-connect.")
+       (soundklaus-authenticate-message)
      (progn ,@body)))
 
 (defun soundklaus-download-track (track filename)
@@ -376,7 +376,8 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
      (goto-char 0)
      (soundklaus-next-media)
      (soundklaus-mode)
-     (add-hook 'post-command-hook 'soundklaus-post-command-hook t)))
+     (add-hook 'post-command-hook 'soundklaus-post-command-hook t)
+     (when soundklaus-show-help (soundklaus-help))))
 
 (defun soundklaus-seek-to (duration)
   "Seek the current player to DURATION."
