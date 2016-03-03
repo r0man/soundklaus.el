@@ -9,7 +9,7 @@
 
 (ert-deftest soundklaus-playlist-path-test ()
   (let ((playlist soundklaus-example-playlist))
-    (should (string= (soundklaus-playlist-path playlist) "/playlists/1914963"))))
+    (should (string= (soundklaus-path playlist) "/playlists/1914963"))))
 
 (ert-deftest soundklaus-playlist-directory-test ()
   (should (string= (soundklaus-playlist-directory soundklaus-example-playlist)

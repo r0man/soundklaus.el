@@ -59,8 +59,14 @@
 (when (boundp 'helm-mode)
   (require 'soundklaus-helm))
 
+(defvar soundklaus-current-track nil
+  "The currently playing track.")
+
 (defvar soundklaus-current-collection nil
   "The current collection.")
+
+(defvar soundklaus-refresh-current-timer nil
+  "The timer that is used to refresh the currently selected track.")
 
 (defun soundklaus-width ()
   "Return the width of the renderable content."
@@ -129,7 +135,10 @@ evaluate BODY."
              do (soundklaus-download-track track filename))))
 
 (defmethod soundklaus-play ((track soundklaus-track))
-  (emms-play-soundklaus-track track))
+  (if (soundklaus-track-stream-url track)
+      (emms-play-soundklaus-track track)
+    (message "Can't play track %s. No stream url."
+             (soundklaus-bold (soundklaus-track-title track)))))
 
 (defmethod soundklaus-play ((playlist soundklaus-playlist))
   (emms-play-soundklaus-playlist
@@ -144,7 +153,10 @@ evaluate BODY."
   (soundklaus-playlist-permalink-url playlist))
 
 (defmethod soundklaus-playlist-add ((track soundklaus-track))
-  (emms-add-soundklaus-track track))
+  (if (soundklaus-track-stream-url track)
+      (emms-add-soundklaus-track track)
+    (message "Can't add track %s to playlist. No stream url."
+             (soundklaus-bold (soundklaus-track-title track)))))
 
 (defmethod soundklaus-playlist-add ((playlist soundklaus-playlist))
   (emms-add-soundklaus-playlist
@@ -157,6 +169,12 @@ evaluate BODY."
   (interactive)
   (let ((media (soundklaus-current-media)))
     (if media (soundklaus-playlist-add media))))
+
+(defun soundklaus-inspect-current ()
+  "Inspect the current SoundCloud media at point."
+  (interactive)
+  (let ((media (soundklaus-current-media)))
+    (if media (pp media))))
 
 (defun soundklaus-browse-current ()
   "Open the current media in a web browser."
@@ -172,7 +190,7 @@ evaluate BODY."
   "Like or unlike the current track."
   (interactive)
   (let ((media (soundklaus-current-media)))
-    (when (and media (same-class-p media 'soundklaus-track))
+    (when (and media (object-of-class-p media 'soundklaus-track))
       (soundklaus-with-access-token
        (soundklaus-track-like media)
        (let ((inhibit-read-only t))
@@ -191,7 +209,8 @@ evaluate BODY."
   "Kill the current media at point."
   (let* ((inhibit-read-only t)
          (positions (soundklaus-current-media-region)))
-    (delete-region (car positions) (cadr positions))))
+    (when positions
+      (delete-region (car positions) (cadr positions)))))
 
 (defun soundklaus-current-media ()
   "Return the current SoundCloud track at point."
@@ -296,15 +315,46 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
 			    padding)
 		    left right))))
 
-;; List item widgets
+(defun soundklaus-progress-bar (track width playing-time)
+  "Render the progress bar of TRACK."
+  (let* ((duration (/ (soundklaus-track-duration track) 1000))
+         (percent (/ (* playing-time 100) (float duration)))
+         (width-1 (floor (/ (* percent width) 100)))
+         (width-2 (- width width-1)))
+    (if (and (cl-plusp width-1)
+             (cl-plusp width-2))
+        (concat (soundklaus-bold (make-string width-1 ?-))
+                (make-string width-2 ?-))
+      (make-string width ?-))))
+
+(defun soundklaus-render-progress-bar (track)
+  "Render the progress bar of TRACK."
+  (let (;; (emms-track (emms-playlist-current-selected-track))
+        (width (- (soundklaus-width) soundklaus-padding)))
+    (widget-insert
+     (concat (make-string soundklaus-padding ?\s)
+             (if (cl-plusp width)
+                 (if (and (soundklaus-track-playing-p track) emms-playing-time)
+                     (soundklaus-progress-bar track width emms-playing-time)
+                   (make-string width ?-)))
+             (make-string soundklaus-padding ?\s)
+             "\n"))))
+
+(defun soundklaus-render-track-duration (track)
+  "Render the TRACK duration and the EMMS playing time."
+  (concat
+   (if (and (soundklaus-track-playing-p track) emms-playing-time)
+       (concat (soundklaus-format-duration (* emms-playing-time 1000)) " / ")
+     "")
+   (soundklaus-bold (or (soundklaus-track-time track) ""))))
 
 (defmethod soundklaus-render ((track soundklaus-track))
   (when (soundklaus-track-title track)
     (let ((start (point)))
       (soundklaus-render-row
        (soundklaus-track-header track)
-       (propertize (or (soundklaus-track-time track) "") 'face 'bold))
-      (soundklaus-horizontal-rule)
+       (soundklaus-render-track-duration track))
+      (soundklaus-render-progress-bar track)
       (soundklaus-render-row
        (format "%s plays, %s downloads, %s comments and %s favorites."
                (soundklaus-track-playback-count track)
@@ -314,49 +364,107 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
        (upcase (s-trim (or (soundklaus-track-genre track) "Unknown"))))
       (put-text-property start (point) :soundklaus-media track))))
 
+(defmethod soundklaus-render ((track soundklaus-playlist-track))
+  (let ((start (point)))
+    (soundklaus-render-row
+     (format "%02d  %s " (soundklaus-playlist-track-number track) (soundklaus-track-title track))
+     (soundklaus-render-track-duration track))
+    (when (soundklaus-track-playing-p track)
+      (put-text-property start (point) 'face 'bold))
+    (put-text-property start (point) :soundklaus-media track)))
+
 (defmethod soundklaus-render ((playlist soundklaus-playlist))
   (when (soundklaus-playlist-title playlist)
     (let ((start (point)))
       (soundklaus-render-row
-       (concat (propertize (soundklaus-playlist-title playlist) 'face 'bold)
+       (concat (soundklaus-bold (soundklaus-playlist-title playlist))
                " - " (soundklaus-playlist-username playlist))
-       (propertize (or (soundklaus-playlist-time playlist) "") 'face 'bold))
+       (soundklaus-bold (or (soundklaus-playlist-time playlist) "")))
       (soundklaus-horizontal-rule)
       (put-text-property start (point) :soundklaus-media playlist)
       (if (soundklaus-playlist-tracks playlist)
-          (cl-loop for n from 1 to (length (soundklaus-playlist-tracks playlist)) do
-                   (let ((track (elt (soundklaus-playlist-tracks playlist) (- n 1)))
-                         (start (point)))
-                     (soundklaus-render-row
-                      (format "%02d  %s " n (soundklaus-track-title track))
-                      (soundklaus-format-duration (soundklaus-track-duration track)))
-                     (put-text-property start (point) :soundklaus-media track)))
+          (mapcar 'soundklaus-render (soundklaus-playlist-tracks playlist))
         (soundklaus-playlist-fetch-async
          playlist (lambda (playlist)
                     (with-current-buffer soundklaus-buffer
                       (save-excursion
-                        (when (soundklaus-goto-playlist playlist)
+                        (when (soundklaus-goto playlist)
                           (let ((inhibit-read-only t))
                             (soundklaus-kill-current-media)
                             (soundklaus-render playlist)))))))))))
 
-(defun soundklaus-goto-playlist (playlist)
+(defun soundklaus-goto (media)
+  "Move point to MEDIA."
   (with-current-buffer soundklaus-buffer
     (goto-char (point-min))
-    (cl-loop
-     (let ((media (soundklaus-next-media)))
-       (if (not media)
-           (return)
-         (if (and (same-class-p (soundklaus-current-media) 'soundklaus-playlist)
-                  (equal (soundklaus-playlist-id playlist)
-                         (soundklaus-playlist-id (soundklaus-current-media))))
-             (return media)))))))
+    (let ((class (object-class media)))
+      (cl-loop
+       (let ((current (soundklaus-next-media)))
+         (if (not current)
+             (return)
+           (if (and (object-of-class-p current class)
+                    (equal (slot-value media 'id)
+                           (slot-value current 'id)))
+               (return current))))))))
+
+(defun soundklaus-goto-current ()
+  "Go to the currently selected EMMS track."
+  (interactive)
+  (let ((emms-track (emms-playlist-current-selected-track)))
+    (when emms-track
+      (soundklaus-goto
+       (make-instance
+        'soundklaus-track
+        :id (emms-track-get emms-track 'soundcloud-id))))))
+
+(defun soundklaus-find-current ()
+  "Find the currently selected EMMS track."
+  (with-current-buffer soundklaus-buffer
+    (save-excursion (soundklaus-goto-current))))
+
+(defun soundklaus-refresh-track (track)
+  "Find TRACK in `soundklaus-buffer' and refresh it."
+  (interactive)
+  (when track
+    (with-current-buffer soundklaus-buffer
+      (save-excursion
+        (when (soundklaus-goto track)
+          (let ((inhibit-read-only t))
+            (soundklaus-kill-current-media)
+            (soundklaus-render track)))))))
+
+(defun soundklaus-refresh-current ()
+  "Refresh the currently selected EMMS track."
+  (interactive)
+  (when (get-buffer soundklaus-buffer)
+    (soundklaus-refresh-track soundklaus-current-track)))
 
 (defmethod soundklaus-render ((collection soundklaus-collection))
   (dolist (item (soundklaus-collection-content collection))
     (soundklaus-render item)
     (insert "\n"))
   (soundklaus-setup-pagination collection))
+
+(defun soundklaus-emms-player-started ()
+  "Called when an Emms player started playing."
+  (let ((track (soundklaus-find-current)))
+    (when track (setq soundklaus-current-track track))))
+
+(defun soundklaus-emms-player-stopped ()
+  "Called when an Emms player stopped playing a track."
+  (let ((track (soundklaus-find-current)))
+    (setq soundklaus-current-track nil)
+    (when track (soundklaus-refresh-track track))))
+
+(defun soundklaus-emms-player-finished ()
+  "Called when an Emms player finished playing a track."
+  (soundklaus-emms-player-stopped))
+
+(defun soundklaus-setup-emms-hooks ()
+  "Setup the EMMS player hooks."
+  (add-hook #'emms-player-started-hook #'soundklaus-emms-player-started)
+  (add-hook #'emms-player-stopped-hook #'soundklaus-emms-player-stopped)
+  (add-hook #'emms-player-finished-hook #'soundklaus-emms-player-finished))
 
 (defmacro soundklaus-with-widget (title &rest body)
   "Render a widget with TITLE and evaluate BODY."
@@ -377,7 +485,12 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
      (soundklaus-next-media)
      (soundklaus-mode)
      (add-hook 'post-command-hook 'soundklaus-post-command-hook t)
-     (when soundklaus-show-help (soundklaus-help))))
+     (when soundklaus-show-help
+       (soundklaus-help))
+     (soundklaus-setup-emms-hooks)
+     (unless soundklaus-refresh-current-timer
+       (setq soundklaus-refresh-current-timer
+             (run-at-time t 0.5 #'soundklaus-refresh-current)))))
 
 (defun soundklaus-seek-to (duration)
   "Seek the current player to DURATION."
@@ -562,6 +675,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
     (define-key map (kbd "d") 'soundklaus-download-current)
     (define-key map (kbd "f") 'soundklaus-like-current-track)
     (define-key map (kbd "g") 'emms-playlist-mode-go)
+    (define-key map (kbd "i") 'soundklaus-inspect-current)
     (define-key map (kbd "n") 'soundklaus-next-media)
     (define-key map (kbd "p") 'soundklaus-prev-media)
     (define-key map (kbd "q") 'soundklaus-kill-buffer)

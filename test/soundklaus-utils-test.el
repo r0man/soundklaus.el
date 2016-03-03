@@ -11,7 +11,7 @@
                  '(("k1" . "v2") ("k2" . "1")))))
 
 (ert-deftest soundklaus-bold-test ()
-  (should (equal (get-text-property 0 'face (soundklaus-bold nil)) 'bold))
+  (should-not (soundklaus-bold nil))
   (should (equal (get-text-property 0 'face (soundklaus-bold "x")) 'bold)))
 
 (ert-deftest soundklaus-format-duration-test ()
