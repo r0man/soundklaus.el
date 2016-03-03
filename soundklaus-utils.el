@@ -55,8 +55,9 @@
 
 (defun soundklaus-auth-params ()
   "Return the query params used for authentication."
-  `(("client_id" . ,soundklaus-client-id)
-    ("oauth_token" . ,soundklaus-access-token)))
+  (soundklaus-remove-nil-values
+   `(("client_id" . ,soundklaus-client-id)
+     ("oauth_token" . ,soundklaus-access-token))))
 
 (defun soundklaus-help-bindings (command)
   "Return the formatted key bindings for `command'."

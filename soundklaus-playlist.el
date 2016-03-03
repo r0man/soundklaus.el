@@ -26,10 +26,12 @@
 
 ;;; Code:
 
-(require 'emms)
+(require 'cl-lib)
 (require 'dash)
+(require 'emms)
 (require 'soundklaus-request)
 (require 'soundklaus-resource)
+(require 'soundklaus-track)
 (require 'soundklaus-user)
 (require 'soundklaus-utils)
 
@@ -42,12 +44,27 @@
    (duration "The duration of the playlist in milliseconds")
    (permalink-url "The URL to the SoundCloud.com page")))
 
+(defclass soundklaus-playlist-track (soundklaus-track)
+  ((number
+    :initarg :number
+    :accessor soundklaus-playlist-track-number
+    :documentation "The number of the track in the playlist.")))
+
+(defun soundklaus-make-playlist-track (track-number assoc-list)
+  "Make a SoundCloud playlist track instance from TRACK-NUMBER and ASSOC-LIST."
+  (let ((track (soundklaus-make-track assoc-list 'soundklaus-playlist-track)))
+    (set-slot-value track 'number track-number)
+    track))
+
 (defun soundklaus-make-playlist (assoc-list)
   "Make a SoundCloud playlist instance from ASSOC-LIST."
   (let ((instance (soundklaus-slurp-instance 'soundklaus-playlist assoc-list)))
     (with-slots (user tracks) instance
       (setf user (soundklaus-make-user user))
-      (setf tracks (mapcar 'soundklaus-make-track tracks))
+      (setf tracks (-map-indexed
+                    (lambda (index track)
+                      (soundklaus-make-playlist-track (1+ index) track))
+                    (cl-map 'list #'identity tracks)))
       instance)))
 
 (defun soundklaus-playlist-directory (playlist)
@@ -72,27 +89,22 @@ will be derived from TOTAL-TRACKS."
   "Return the username of PLAYLIST."
   (soundklaus-user-username (soundklaus-playlist-user playlist)))
 
-(defun soundklaus-playlist-path (playlist)
-  "Return the relative URL of PLAYLIST."
-  (-when-let (id (soundklaus-playlist-id playlist))
-    (concat "/playlists/" (number-to-string id))))
-
 (defun soundklaus-playlist-fetch (playlist)
   "Fetch the PLAYLIST from the SoundCloud API."
-  (let* ((request (soundklaus-make-request (soundklaus-playlist-path playlist)))
+  (let* ((request (soundklaus-make-request (soundklaus-path playlist)))
          (response (soundklaus-send-sync-request request)))
     (soundklaus-make-playlist (request-response-data response))))
 
 (defun soundklaus-playlist-fetch-async (playlist callback)
   "Fetch the PLAYLIST from the SoundCloud API asynchronously and call CALLBACK."
   (soundklaus-send-async-request
-   (soundklaus-make-request (soundklaus-playlist-path playlist))
+   (soundklaus-make-request (soundklaus-path playlist))
    (lambda (request response)
      (funcall callback (soundklaus-make-playlist (request-response-data response))))))
 
 (define-emms-source soundklaus-playlist (playlist)
   "An EMMS source for a SoundCloud PLAYLIST."
-  (mapc 'emms-insert-soundklaus-track
+  (mapc 'emms-add-soundklaus-track
         (soundklaus-playlist-tracks playlist)))
 
 (provide 'soundklaus-playlist)

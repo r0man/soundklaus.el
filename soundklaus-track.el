@@ -47,9 +47,9 @@
    (permalink-url "The URL to the SoundCloud.com page")
    (user-favorite "True if the current user favorite the track, false otherwise")))
 
-(defun soundklaus-make-track (assoc-list)
+(defun soundklaus-make-track (assoc-list &optional class)
   "Make a SoundCloud track instance from ASSOC-LIST."
-  (let ((instance (soundklaus-slurp-instance 'soundklaus-track assoc-list)))
+  (let ((instance (soundklaus-slurp-instance (or class 'soundklaus-track) assoc-list)))
     (with-slots (user playback-count download-count comment-count favoritings-count) instance
       (setf user (soundklaus-make-user user))
       (setf playback-count (or playback-count 0))
@@ -85,11 +85,12 @@ with the track's username if INCLUDE-USER is true."
 
 (defun soundklaus-track-stream-url (track)
   "Return the stream URL of TRACK."
-  (concat (slot-value track 'stream-url) "?"
-	  (soundklaus-url-encode
-	   (soundklaus-remove-nil-values
-	    `(("client_id" . ,soundklaus-client-id)
-	      ("oauth_token" . ,soundklaus-access-token))))))
+  (when (slot-value track 'stream-url)
+    (concat (slot-value track 'stream-url) "?"
+            (soundklaus-url-encode
+             (soundklaus-remove-nil-values
+              `(("client_id" . ,soundklaus-client-id)
+                ("oauth_token" . ,soundklaus-access-token)))))))
 
 (defun soundklaus-track-time (track)
   "Return the TRACK duration formatted as HH:MM:SS."
@@ -115,6 +116,12 @@ with the track's username if INCLUDE-USER is true."
        (t (error (format "Can't like %s." title) )))
       response)))
 
+(defun soundklaus-track-playing-p (track)
+  "Return true if TRACK is currently playing, otherwise `nil'."
+  (and track soundklaus-current-track
+       (= (soundklaus-track-id track)
+          (soundklaus-track-id soundklaus-current-track))))
+
 (defun soundklaus-tag-track (filename track)
   "Tag the SoundCloud TRACK."
   (shell-command (format "mp3info -d %s" (shell-quote-argument filename)))
@@ -127,6 +134,7 @@ with the track's username if INCLUDE-USER is true."
   (let ((emms-track (emms-track 'url (soundklaus-track-stream-url track))))
     (emms-track-set emms-track 'info-title (soundklaus-track-title track))
     (emms-track-set emms-track 'info-playing-time (soundklaus-track-duration-secs track))
+    (emms-track-set emms-track 'soundcloud-id (soundklaus-track-id track))
     (emms-playlist-insert-track emms-track)))
 
 (provide 'soundklaus-track)
