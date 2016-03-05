@@ -1,15 +1,18 @@
 language: emacs-lisp
 env:
+  matrix:
   - EVM_EMACS=emacs-24.5-bin
   - EVM_EMACS=emacs-24.4-bin
+  global:
+    secure: Lic5yruB1Hfr2fvbdrJWa0pmaLiIGkXtXG+iThHlH3xhrOno8ksM+HxKZXT7pUNhtiBpuwumolCF/Mf/byKPc6f/KeBBs7w73MHaspX37wJq8yBRDncrMlLfpS0eQRaxX/0ZO2EZkvFOaMEfYNyznnGOMjqKEAv9GDr+sDd9Jg4=
 install:
-  - sudo mkdir /usr/local/evm
-  - sudo chown $(id -u):$(id -g) /usr/local/evm
-  - curl -fsSkL https://raw.github.com/rejeep/evm/master/go | bash
-  - export PATH="$HOME/.evm/bin:$PATH"
-  - evm install $EVM_EMACS --use
-  - curl -fsSkL https://raw.github.com/cask/cask/master/go | python
-  - export PATH="$HOME/.cask/bin:$PATH"
-  - cask
+- sudo mkdir /usr/local/evm
+- sudo chown $(id -u):$(id -g) /usr/local/evm
+- curl -fsSkL https://raw.github.com/rejeep/evm/master/go | bash
+- export PATH="$HOME/.evm/bin:$PATH"
+- evm install $EVM_EMACS --use
+- curl -fsSkL https://raw.github.com/cask/cask/master/go | python
+- export PATH="$HOME/.cask/bin:$PATH"
+- cask
 script:
-  - make
+- make

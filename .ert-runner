@@ -1,1 +1,1 @@
--L . -L test
+-L . -L test -l test/test-helper.el

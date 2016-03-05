@@ -1,0 +1,13 @@
+(when (require 'undercover nil t)
+  (undercover "*.el"))
+
+(require 'soundklaus-examples)
+(require 'soundklaus-collection-test)
+(require 'soundklaus-helm-test)
+(require 'soundklaus-playlist-test)
+(require 'soundklaus-request-test)
+(require 'soundklaus-resource-test)
+(require 'soundklaus-test)
+(require 'soundklaus-track-test)
+(require 'soundklaus-user-test)
+(require 'soundklaus-utils-test)
