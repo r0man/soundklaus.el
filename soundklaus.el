@@ -86,9 +86,11 @@
   "Ensure that the `soundklaus-access-token` is not nil.
 If `soundklaus-access-token` is not set raise an error, otherwise
 evaluate BODY."
-  `(if (s-blank? soundklaus-access-token)
-       (soundklaus-authenticate-message)
-     (progn ,@body)))
+  `(progn
+     (soundklaus-load-config)
+     (if (s-blank? soundklaus-access-token)
+        (soundklaus-authenticate-message)
+      (progn ,@body))))
 
 (defun soundklaus-download-track (track filename)
   "Download URL to FILENAME."
@@ -465,6 +467,12 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (add-hook #'emms-player-started-hook #'soundklaus-emms-player-started)
   (add-hook #'emms-player-stopped-hook #'soundklaus-emms-player-stopped)
   (add-hook #'emms-player-finished-hook #'soundklaus-emms-player-finished))
+
+(defun soundklaus-load-config ()
+  "Load the soundklaus.el configuration."
+  (interactive)
+  (when (file-exists-p soundklaus-config-file)
+    (load soundklaus-config-file)))
 
 (defmacro soundklaus-with-widget (title &rest body)
   "Render a widget with TITLE and evaluate BODY."

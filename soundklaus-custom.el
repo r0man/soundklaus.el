@@ -41,6 +41,11 @@
   :type 'string
   :group 'soundklaus-mode)
 
+(defcustom soundklaus-config-file "~/.soundklaus.el"
+  "The SoundKlaus configuration file."
+  :type 'string
+  :group 'soundklaus-mode)
+
 (defcustom soundklaus-desktop-entry "~/.local/share/applications/soundklaus.desktop"
   "The filename of the X Window System desktop entry."
   :type 'integer
