@@ -10,4 +10,5 @@
 
 (development
  (depends-on "ert-runner" "0.7.0")
- (depends-on "helm" "1.9.2"))
+ (depends-on "helm" "1.9.2")
+ (depends-on "undercover" "0.6.0"))
