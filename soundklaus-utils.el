@@ -51,7 +51,7 @@
 
 (defun soundklaus-bold (text)
   "Add the `bold' face property to TEXT."
-  (when text (propertize text 'face 'bold)))
+  (when text (propertize (format "%s" text) 'face 'bold)))
 
 (defun soundklaus-auth-params ()
   "Return the query params used for authentication."

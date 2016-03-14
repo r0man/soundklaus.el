@@ -12,7 +12,15 @@
 
 (ert-deftest soundklaus-bold-test ()
   (should-not (soundklaus-bold nil))
-  (should (equal (get-text-property 0 'face (soundklaus-bold "x")) 'bold)))
+  (let ((text (soundklaus-bold "x")))
+    (should (string= text "x"))
+    (should (equal (get-text-property 0 'face text) 'bold)))
+  (let ((text (soundklaus-bold 'x)))
+    (should (string= text "x"))
+    (should (equal (get-text-property 0 'face text) 'bold)))
+  (let ((text (soundklaus-bold 10)))
+    (should (string= text "10"))
+    (should (equal (get-text-property 0 'face text) 'bold))))
 
 (ert-deftest soundklaus-format-duration-test ()
   (should (equal "00:00" (soundklaus-format-duration 0)))
