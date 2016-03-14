@@ -66,12 +66,12 @@
   :type 'integer
   :group 'soundklaus-mode)
 
-(defcustom soundklaus-helm-track-limit 15
+(defcustom soundklaus-helm-track-limit 40
   "The number of tracks to fetch from SoundCloud when using Helm."
   :type 'integer
   :group 'soundklaus-mode)
 
-(defcustom soundklaus-helm-playlist-limit 15
+(defcustom soundklaus-helm-playlist-limit 40
   "The number of playlists to fetch from SoundCloud when using Helm."
   :type 'integer
   :group 'soundklaus-mode)
