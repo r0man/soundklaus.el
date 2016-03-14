@@ -160,14 +160,21 @@ Optional argument INCLUDE-PARAMS Append the query params to the url."
   (let ((json-false nil))
     (json-read)))
 
+(defun soundklaus-show-http-error (response)
+  "Print the HTTP error response."
+  (message "SoundCloud HTTP (%s) %s: %s"
+           (soundklaus-bold (number-to-string (request-response-status-code response)))
+           (request-response-symbol-status response)
+           (request-response-url response)))
+
 (defun soundklaus-send-sync-request (http-request)
   "Send the HTTP-REQUEST asynchronously."
   (with-local-quit
     (request
      (soundklaus-request-url http-request)
      :error (cl-function
-             (lambda (&key error-thrown &allow-other-keys)
-               (message "Got error: %S" error-thrown)))
+             (lambda (&key response &allow-other-keys)
+               (soundklaus-show-http-error response)))
      :headers '(("Accept-Charset" . "UTF-8"))
      :params (soundklaus-request-params-as-strings http-request)
      :parser #'soundklaus-request-parser
@@ -179,8 +186,8 @@ Optional argument INCLUDE-PARAMS Append the query params to the url."
   (request
    (soundklaus-request-url http-request)
    :error (cl-function
-           (lambda (&key error-thrown &allow-other-keys)
-             (message "Got error: %S" error-thrown)))
+           (lambda (&key response &allow-other-keys)
+             (soundklaus-show-http-error response)))
    :headers '(("Accept-Charset" . "UTF-8"))
    :params (soundklaus-request-params-as-strings http-request)
    :parser #'soundklaus-request-parser
