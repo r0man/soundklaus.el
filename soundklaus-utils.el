@@ -60,7 +60,7 @@
      ("oauth_token" . ,soundklaus-access-token))))
 
 (defun soundklaus-help-bindings (command)
-  "Return the formatted key bindings for `command'."
+  "Return the formatted key bindings for `COMMAND'."
   (mapconcat (lambda (key) (propertize (key-description key) 'face 'bold))
              (where-is-internal command soundklaus-mode-map) ", "))
 
@@ -81,7 +81,9 @@
            collect (cons (format "%s" k) (format "%s" v))))
 
 (defun soundklaus-format-duration (duration-in-ms &optional always-show-hours)
-  "Format DURATION-IN-MS in the HH:MM:SS format."
+  "Format DURATION-IN-MS in the HH:MM:SS format.
+When ALWAYS-SHOW-HOURS always show the hour, otherwise only if
+the length is greater than 60 minutes."
   (when duration-in-ms
     (let* ((duration (/ duration-in-ms 1000))
            (hours (floor (/ duration 3600)))
