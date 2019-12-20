@@ -98,7 +98,7 @@ evaluate BODY."
         (buffer (format "*soundklaus-download-%s*" (soundklaus-track-id track))))
     (cond
      ((file-directory-p filename)
-      (error "Can't save track to existing directory, please enter a filename."))
+      (error "Can't save track to existing directory, please enter a filename"))
      ((file-exists-p filename)
       (message "Track already downloaded to %s." filename))
      (t (progn
@@ -186,7 +186,7 @@ evaluate BODY."
       (let ((url (soundklaus-permalink-url media)))
         (if url
             (browse-url url)
-          (error "No permalink found."))))))
+          (error "No permalink found"))))))
 
 (defun soundklaus-like-current-track ()
   "Like or unlike the current track."
