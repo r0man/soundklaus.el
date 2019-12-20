@@ -93,7 +93,7 @@ evaluate BODY."
       (progn ,@body))))
 
 (defun soundklaus-download-track (track filename)
-  "Download URL to FILENAME."
+  "Download TRACK to FILENAME."
   (let ((url (soundklaus-track-stream-url track))
         (buffer (format "*soundklaus-download-%s*" (soundklaus-track-id track))))
     (cond
