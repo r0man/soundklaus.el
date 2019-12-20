@@ -154,8 +154,6 @@ Optional argument INCLUDE-PARAMS Append the query params to the url."
 
 (defun soundklaus-request-parser ()
   "Parse the body of a HTTP response from the current buffer."
-  (encode-coding-region (point-min) (point-max) 'latin-1)
-  (decode-coding-region (point-min) (point-max) 'utf-8)
   (goto-char (point-min))
   (let ((json-false nil))
     (json-read)))
