@@ -87,10 +87,19 @@
 If `soundklaus-access-token` is not set raise an error, otherwise
 evaluate BODY."
   `(progn
-     (soundklaus-load-config)
+     (soundklaus-load-secrets)
      (if (s-blank? soundklaus-access-token)
-        (soundklaus-authenticate-message)
-      (progn ,@body))))
+         (soundklaus-authenticate-message)
+       (progn ,@body))))
+
+(defun soundklaus-save-access-token-to-file (access-token filename)
+  "Save an s-expr that will set `soundklaus-access-token` to ACCESS-TOKEN to FILENAME."
+  (when access-token
+    (with-temp-buffer
+      (insert (with-output-to-string (prin1 `(setq soundklaus-access-token ,access-token))))
+      (newline)
+      (write-region (point-min) (point-max) filename)
+      (chmod filename #o600))))
 
 (defun soundklaus-download-track (track filename)
   "Download TRACK to FILENAME."
@@ -289,7 +298,10 @@ evaluate BODY."
 				      (error-description (cadr (assoc "error_description" params))))
 				  (when access-token
 				    (setq soundklaus-access-token access-token)
-				    (message "Authentication with SoundCloud complete."))
+				    (message "Authentication with SoundCloud complete.")
+                                    (when (yes-or-no-p "Do you want to save the access token?")
+                                      (soundklaus-save-access-token-to-file soundklaus-access-token soundklaus-secrets-file )
+                                      (message "Access token saved to %s." soundklaus-secrets-file)))
 				  (when error-code
 				    (message "Authentication with SoundCloud failed. %s"
 					     (replace-regexp-in-string "+" " " (or error-description error-code))))
@@ -468,11 +480,11 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (add-hook #'emms-player-stopped-hook #'soundklaus-emms-player-stopped)
   (add-hook #'emms-player-finished-hook #'soundklaus-emms-player-finished))
 
-(defun soundklaus-load-config ()
-  "Load the soundklaus.el configuration."
+(defun soundklaus-load-secrets ()
+  "Load the soundklaus.el secrets."
   (interactive)
-  (when (file-exists-p soundklaus-config-file)
-    (load soundklaus-config-file)))
+  (when (file-exists-p soundklaus-secrets-file)
+    (load soundklaus-secrets-file)))
 
 (defmacro soundklaus-with-widget (title &rest body)
   "Render a widget with TITLE and evaluate BODY."

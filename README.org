@@ -70,9 +70,9 @@
    callback URL =soundklaus://oauth/callback=.
 
    On a Linux system you can configure this by running =M-x
-   soundklaus-desktop-entry-save=. This will write the following content
-   to the =~/.local/share/applications/soundklaus.desktop= file in your
-   home directory.
+   soundklaus-desktop-entry-save=. This will write the following
+   content to the =~/.local/share/applications/soundklaus.desktop=
+   file in your home directory.
 
    #+BEGIN_EXAMPLE
     [Desktop Entry]
@@ -84,39 +84,23 @@
     MimeType=x-scheme-handler/soundklaus;
    #+END_EXAMPLE
 
-   To setup this functionality on other operating systems take a look at
-   the [[http://orgmode.org/worg/org-contrib/org-protocol.html#sec-3][system setup]] section in [[http://orgmode.org/worg/org-contrib/org-protocol.html][org-protocol.el]] and adapt it for
-   /soundklaus.el/.
+   Next, make sure your Emacs runs as a server. You can do this by
+   adding this to your Emacs configuration.
 
-   In detail what should be done is this:
-
-   -  Make sure emacs runs as a server or as a deamon (because we use
-     emacsclient for this)
-   -  Run these commands (some gnome utils may be necessary for them).
-     Assuming emacs is in /usr/bin/emacsclient in anycase, replace with
-     whatever =$ which emacs= gives you.
-
-     #+BEGIN_EXAMPLE
-          $ gconftool-2 -s /desktop/gnome/url-handlers/soundklaus/command '/usr/bin/emacsclient %s' --type String
-          $ gconftool-2 -s /desktop/gnome/url-handlers/soundklaus/enabled --type Boolean true
-     #+END_EXAMPLE
-
-   -  Use firefox for this and add a new protocol handler with
-     [[this%20guide%20on%20registering%20new%20protocols][http://kb.mozillazine.org/Register\_protocol#Linux]].  Remember to
-     change foo with soundklaus
-   -  Add this line to /usr/share/applications/defaults.list
-
-     #+BEGIN_EXAMPLE
-          x-scheme-handler/soundklaus=soundklaus.desktop
-     #+END_EXAMPLE
+   #+BEGIN_SRC emacs-lisp
+     (unless (server-running-p)
+       (add-hook 'after-init-hook 'server-start t)))
+   #+END_SRC
 
    Now you can start the [[http://oauth.net/2][OAuth2]] authentication dance with =M-x
    soundklaus-connect=. You should get redirected to /SoundCloud/ and
    allow /soundklaus.el/ to access your account. After pressing the
-   =Connect= button on the /SoundCloud/ page the browser should open
-   Emacs and set the =soundklaus-access-token= customization
-   variable. You should save and load this variable from a safe place for
-   future sessions.
+   =Connect= button on the /SoundCloud/ page, the browser should open
+   Emacs and set the =soundklaus-access-token= customization variable.
+
+   To setup this functionality on other operating systems take a look
+   at the [[http://orgmode.org/worg/org-contrib/org-protocol.html#sec-3][system setup]] section in [[http://orgmode.org/worg/org-contrib/org-protocol.html][org-protocol.el]] and adapt it for
+   /soundklaus.el/.
 
 ** Screenshot
 
@@ -124,7 +108,7 @@
 
 ** License
 
-   Copyright © 2014-2016 [[https://github.com/r0man][r0man]]
+   Copyright © 2014-2019 [[https://github.com/r0man][r0man]]
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
