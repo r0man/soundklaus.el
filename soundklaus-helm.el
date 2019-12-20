@@ -93,7 +93,6 @@
     :action #'soundklaus-play
     :action-transformer #'soundklaus-helm-track-action
     :candidates #'soundklaus-helm-track-search
-    :delayed t
     :volatile t)
   "The Helm source for SoundCloud tracks.")
 
@@ -102,7 +101,6 @@
     :action (lambda (playlist) (soundklaus-play (soundklaus-playlist-add playlist)))
     :action-transformer #'soundklaus-helm-playlist-action
     :candidates #'soundklaus-helm-playlist-search
-    :delayed t
     :volatile t)
   "The Helm source for SoundCloud playlists.")
 
