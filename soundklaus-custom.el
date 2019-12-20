@@ -41,8 +41,8 @@
   :type 'string
   :group 'soundklaus-mode)
 
-(defcustom soundklaus-config-file "~/.soundklaus.el"
-  "The SoundKlaus configuration file."
+(defcustom soundklaus-secrets-file "~/.soundklaus.el"
+  "The SoundKlaus secrets file."
   :type 'string
   :group 'soundklaus-mode)
 
