@@ -5,15 +5,15 @@
   (let* ((playlist soundklaus-example-playlist)
          (playlist (soundklaus-playlist-fetch playlist)))
     (should (string= (soundklaus-playlist-title playlist)
-                     "CS009 ∆ ACID PAULI - Mst LP"))))
+                     "Montagssorbet mit Laut & Luise"))))
 
 (ert-deftest soundklaus-playlist-path-test ()
   (let ((playlist soundklaus-example-playlist))
-    (should (string= (soundklaus-path playlist) "/playlists/1914963"))))
+    (should (string= (soundklaus-path playlist) "/playlists/2111915"))))
 
 (ert-deftest soundklaus-playlist-directory-test ()
   (should (string= (soundklaus-playlist-directory soundklaus-example-playlist)
-                   "KaterMukke-CS009_ACID_PAULI_Mst_LP")))
+                   "KaterMukke-Montagssorbet_mit_Laut_Luise")))
 
 (ert-deftest soundklaus-playlist-track-filename-test ()
   (should (string= (soundklaus-playlist-track-filename soundklaus-example-track 1 5)

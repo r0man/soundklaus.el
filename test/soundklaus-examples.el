@@ -8,7 +8,7 @@
 (defvar soundklaus-example-user
   (make-instance 'soundklaus-user :id 8928131 :username "KaterMukke"))
 
-(defvar soundklaus-example-track 
+(defvar soundklaus-example-track
   (make-instance
    'soundklaus-track
    :id 40258263
@@ -26,9 +26,9 @@
 (defvar soundklaus-example-playlist
   (make-instance
    'soundklaus-playlist
-   :id 1914963
-   :title "CS009   ACID PAULI - Mst LP"
+   :id 2111915
+   :title "Montagssorbet mit Laut & Luise"
    :user soundklaus-example-user
-   :duration 2508334))
+   :duration 642141073))
 
 (provide 'soundklaus-examples)

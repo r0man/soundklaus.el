@@ -21,8 +21,8 @@
 
 (ert-deftest soundklaus-helm-playlist-action-test ()
   (should (equal (soundklaus-helm-playlist-action nil soundklaus-example-playlist)
-                 '(("Play Playlist - CS009   ACID PAULI - Mst LP - KaterMukke" . soundklaus-play)
-                   ("Queue Playlist - CS009   ACID PAULI - Mst LP - KaterMukke" . soundklaus-playlist-add)
+                 '(("Play Playlist - Montagssorbet mit Laut & Luise - KaterMukke" . soundklaus-play)
+                   ("Queue Playlist - Montagssorbet mit Laut & Luise - KaterMukke" . soundklaus-playlist-add)
                    ("Show Playlist Metadata" . pp)))))
 
 (provide 'soundklaus-helm-test)
