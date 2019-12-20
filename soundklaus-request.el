@@ -159,7 +159,6 @@ Optional argument INCLUDE-PARAMS Append the query params to the url."
     (json-read)))
 
 (defun soundklaus-show-http-error (response)
-  "Print the HTTP error response."
   "Print the HTTP error RESPONSE."
   (message "SoundCloud HTTP (%s) %s: %s"
            (soundklaus-bold (number-to-string (request-response-status-code response)))
