@@ -1,32 +1,57 @@
-CASK = cask
-EMACS = emacs
-EMACSFLAGS = --batch -L . 
+# * makem.sh/Makefile --- Script to aid building and testing Emacs Lisp packages
 
-all: package
+# URL: https://github.com/alphapapa/makem.sh
+# Version: 0.2
 
-.PHONY: clean test
+# * Arguments
 
-.cask:
-	$(CASK) install
+# For consistency, we use only var=val options, not hyphen-prefixed options.
 
-checkdoc:
-	$(CASK) exec $(EMACS) $(EMACSFLAGS) --eval="(checkdoc)" -Q soundklaus.el
+# NOTE: I don't like duplicating the arguments here and in makem.sh,
+# but I haven't been able to find a way to pass arguments which
+# conflict with Make's own arguments through Make to the script.
+# Using -- doesn't seem to do it.
 
-clean:
-	@rm -rf dist
-	$(CASK) clean-elc
+ifdef install-deps
+	INSTALL_DEPS = "--install-deps"
+endif
+ifdef install-linters
+	INSTALL_LINTERS = "--install-linters"
+endif
 
-compile: .cask
-	$(CASK) exec $(EMACS) $(EMACSFLAGS) --eval="(batch-byte-compile)" -Q soundklaus.el
+ifdef sandbox
+	ifeq ($(sandbox), t)
+		SANDBOX = --sandbox
+	else
+		SANDBOX = --sandbox=$(sandbox)
+	endif
+endif
 
-distclean: clean
-	@rm -rf .cask
+ifdef debug
+	DEBUG = "--debug"
+endif
 
-lint: .cask
-	$(CASK) exec $(EMACS) $(EMACSFLAGS) --eval="(elint-directory \".\")" 
+# ** Verbosity
 
-package: test checkdoc
-	$(CASK) package
+# Since the "-v" in "make -v" gets intercepted by Make itself, we have
+# to use a variable.
 
-test: .cask
-	$(CASK) exec ert-runner
+verbose = $(v)
+
+ifneq (,$(findstring vv,$(verbose)))
+	VERBOSE = "-vv"
+else ifneq (,$(findstring v,$(verbose)))
+	VERBOSE = "-v"
+endif
+
+# * Rules
+
+# TODO: Handle cases in which "test" or "tests" are called and a
+# directory by that name exists, which can confuse Make.
+
+%:
+	@./makem.sh $(DEBUG) $(VERBOSE) $(SANDBOX) $(INSTALL_DEPS) $(INSTALL_LINTERS) $(@)
+
+.DEFAULT: init
+init:
+	@./makem.sh $(DEBUG) $(VERBOSE) $(SANDBOX) $(INSTALL_DEPS) $(INSTALL_LINTERS)

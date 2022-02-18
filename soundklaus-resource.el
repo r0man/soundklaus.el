@@ -91,7 +91,7 @@ NAME is the name of the resource and PATTERN is used to
 interpolate the arguments passed to the generated method."
   (let ((slots (soundklaus-path-symbols pattern))
 	(resource (cl-gensym "resource-")))
-    `(defmethod ,(soundklaus-intern "path") ((,resource ,(soundklaus-intern name)))
+    `(cl-defmethod ,(soundklaus-intern "path") ((,resource ,(soundklaus-intern name)))
        (soundklaus-replace-slots ,pattern ',slots ,resource))))
 
 (defmacro define-soundklaus-resource (name pattern doc slots)

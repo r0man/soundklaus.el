@@ -1,6 +1,7 @@
 * soundklaus.el
 
-  [[https://travis-ci.org/r0man/soundklaus.el][https://travis-ci.org/r0man/soundklaus.el.svg]]
+  [[https://github.com/r0man/soundklaus.el/actions?query=workflow%3ACI][https://github.com/r0man/soundklaus.el/workflows/CI/badge.svg]]
+  [[https://github.com/r0man/soundklaus.el/actions/workflows/melpazoid.yml][https://github.com/r0man/soundklaus.el/actions/workflows/melpazoid.yml/badge.svg]]
   [[https://melpa.org/#/soundklaus][https://melpa.org/packages/soundklaus-badge.svg]]
 
   Play music on [[https://soundcloud.com][SoundCloud]] with [[http://www.gnu.org/software/emacs/][Emacs]] via [[http://www.gnu.org/software/emms][EMMS]].

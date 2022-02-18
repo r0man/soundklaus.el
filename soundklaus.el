@@ -6,7 +6,7 @@
 ;; URL: https://github.com/r0man/soundklaus.el
 ;; Keywords: soundcloud, music, emms
 ;; Version: 0.1.0
-;; Package-Requires: ((dash "2.12.1") (emacs "24") (emms "4.0") (s "1.11.0") (pkg-info "0.4") (cl-lib "0.5") (request "0.2.0"))
+;; Package-Requires: ((dash "2.19.1") (emacs "24") (emms "4.0") (helm "3.8.4") (s "1.12.0") (pkg-info "0.6") (request "0.3.2"))
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -39,6 +39,7 @@
 ;;; Code:
 
 (require 'advice)
+(require 'cl-generic)
 (require 'cl-lib)
 (require 'dash)
 (require 'eieio)
@@ -125,13 +126,13 @@ evaluate BODY."
             (message "Downloading %s ..." (soundklaus-track-title track))
             process))))))
 
-(defmethod soundklaus-download ((track soundklaus-track))
+(cl-defmethod soundklaus-download ((track soundklaus-track))
   (let ((filename (read-file-name
                    "Track filename: " soundklaus-download-dir
                    nil nil (soundklaus-track-filename track t))))
     (soundklaus-download-track track filename)))
 
-(defmethod soundklaus-download ((playlist soundklaus-playlist))
+(cl-defmethod soundklaus-download ((playlist soundklaus-playlist))
   (let* ((directory (read-directory-name
                      "Playlist directory: " soundklaus-download-dir
                      nil nil (soundklaus-playlist-directory playlist)))
@@ -145,31 +146,31 @@ evaluate BODY."
              for filename = (concat directory filename)
              do (soundklaus-download-track track filename))))
 
-(defmethod soundklaus-play ((track soundklaus-track))
+(cl-defmethod soundklaus-play ((track soundklaus-track))
   (if (soundklaus-track-stream-url track)
       (emms-play-soundklaus-track track)
     (message "Can't play track %s. No stream url."
              (soundklaus-bold (soundklaus-track-title track)))))
 
-(defmethod soundklaus-play ((playlist soundklaus-playlist))
+(cl-defmethod soundklaus-play ((playlist soundklaus-playlist))
   (emms-play-soundklaus-playlist
    (if (soundklaus-playlist-tracks playlist)
        playlist
      (soundklaus-playlist-fetch playlist))))
 
-(defmethod soundklaus-permalink-url ((track soundklaus-track))
+(cl-defmethod soundklaus-permalink-url ((track soundklaus-track))
   (soundklaus-track-permalink-url track))
 
-(defmethod soundklaus-permalink-url ((playlist soundklaus-playlist))
+(cl-defmethod soundklaus-permalink-url ((playlist soundklaus-playlist))
   (soundklaus-playlist-permalink-url playlist))
 
-(defmethod soundklaus-playlist-add ((track soundklaus-track))
+(cl-defmethod soundklaus-playlist-add ((track soundklaus-track))
   (if (soundklaus-track-stream-url track)
       (emms-add-soundklaus-track track)
     (message "Can't add track %s to playlist. No stream url."
              (soundklaus-bold (soundklaus-track-title track)))))
 
-(defmethod soundklaus-playlist-add ((playlist soundklaus-playlist))
+(cl-defmethod soundklaus-playlist-add ((playlist soundklaus-playlist))
   (emms-add-soundklaus-playlist
    (if (soundklaus-playlist-tracks playlist)
        playlist
@@ -362,7 +363,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
      "")
    (soundklaus-bold (or (soundklaus-track-time track) ""))))
 
-(defmethod soundklaus-render ((track soundklaus-track))
+(cl-defmethod soundklaus-render ((track soundklaus-track))
   (when (soundklaus-track-title track)
     (let ((start (point)))
       (soundklaus-render-row
@@ -378,7 +379,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
        (upcase (s-trim (or (soundklaus-track-genre track) "Unknown"))))
       (put-text-property start (point) :soundklaus-media track))))
 
-(defmethod soundklaus-render ((track soundklaus-playlist-track))
+(cl-defmethod soundklaus-render ((track soundklaus-playlist-track))
   (let ((start (point)))
     (soundklaus-render-row
      (format "%02d  %s " (soundklaus-playlist-track-number track) (soundklaus-track-title track))
@@ -387,7 +388,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
       (put-text-property start (point) 'face 'bold))
     (put-text-property start (point) :soundklaus-media track)))
 
-(defmethod soundklaus-render ((playlist soundklaus-playlist))
+(cl-defmethod soundklaus-render ((playlist soundklaus-playlist))
   (when (soundklaus-playlist-title playlist)
     (let ((start (point)))
       (soundklaus-render-row
@@ -453,7 +454,7 @@ Optional argument WIDTH-RIGHT is the width of the right argument."
   (when (get-buffer soundklaus-buffer)
     (soundklaus-refresh-track soundklaus-current-track)))
 
-(defmethod soundklaus-render ((collection soundklaus-collection))
+(cl-defmethod soundklaus-render ((collection soundklaus-collection))
   (dolist (item (soundklaus-collection-content collection))
     (soundklaus-render item)
     (insert "\n"))

@@ -26,22 +26,24 @@
 
 ;;; Code:
 
-(defgeneric soundklaus-permalink-url (media)
+(require 'cl-generic)
+
+(cl-defgeneric soundklaus-permalink-url (media)
   "Return the permalink URL of the SoundCloud MEDIA.")
 
-(defgeneric soundklaus-download (media)
+(cl-defgeneric soundklaus-download (media)
   "Download the MEDIA from SoundCloud.")
 
-(defgeneric soundklaus-play (media)
+(cl-defgeneric soundklaus-play (media)
   "Play the SoundCloud MEDIA.")
 
-(defgeneric soundklaus-playlist-add (media)
+(cl-defgeneric soundklaus-playlist-add (media)
   "Insert the SoundCloud MEDIA into the EMMS playlist.")
 
-(defgeneric soundklaus-render (media)
+(cl-defgeneric soundklaus-render (media)
   "Render the SoundCloud MEDIA as a list item.")
 
-(defgeneric soundklaus-path (resource)
+(cl-defgeneric soundklaus-path (resource)
   "Returns the path to the RESOURCE on SoundCloud.")
 
 (provide 'soundklaus-generic)
